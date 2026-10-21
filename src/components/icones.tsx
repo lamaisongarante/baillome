@@ -11,6 +11,9 @@ const traces = {
   agenda: ['M4 6h16v14H4zM8 3v5M16 3v5M4 11h16'],
   docs: ['M7 3h7l5 5v13H7zM14 3v5h5'],
   cloche: ['M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z', 'M10 20.5a2 2 0 0 0 4 0'],
+  // Hors maquettes : accès au compte, dessiné dans le même style.
+  personne: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M4.5 20a7.5 7.5 0 0 1 15 0'],
+  retour: ['M15 5l-7 7 7 7'],
 } as const;
 
 export type NomIcone = keyof typeof traces;

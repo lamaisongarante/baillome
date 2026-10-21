@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -32,12 +32,23 @@ export default function Accueil() {
             <LogoTuile />
             <Text style={styles.logotype}>Baillome</Text>
           </View>
-          <Pressable
-            style={styles.boutonRond}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications">
-            <Icone nom="cloche" couleur={couleurs.surPin} taille={19} epaisseur={1.8} />
-          </Pressable>
+          <View style={styles.actions}>
+            <Pressable
+              style={styles.boutonRond}
+              accessibilityRole="button"
+              accessibilityLabel="Notifications">
+              <Icone nom="cloche" couleur={couleurs.surPin} taille={19} epaisseur={1.8} />
+            </Pressable>
+            {/* Avatar : accès au compte (choix de Sarah, à côté de la cloche). */}
+            <Link href="/compte" asChild>
+              <Pressable
+                style={styles.avatar}
+                accessibilityRole="button"
+                accessibilityLabel="Mon compte">
+                <Icone nom="personne" couleur={couleurs.pin} taille={20} epaisseur={1.8} />
+              </Pressable>
+            </Link>
+          </View>
         </View>
 
         <Text style={styles.bonjour}>Bonjour</Text>
@@ -87,6 +98,18 @@ const styles = StyleSheet.create({
     fontSize: 19,
     letterSpacing: -0.66,
     color: couleurs.surPin,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: couleurs.surPinDoux,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   boutonRond: {
     width: 44,
