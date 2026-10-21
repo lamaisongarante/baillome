@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Je délègue</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Instrument+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E3B2E}a:hover{color:#06251C}
+</style>
+</helmet>
+<div style="width: 390px; height: 1900px; box-sizing: border-box; background: #F6F8F4; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; color: #0E3B2E; display: flex; flex-direction: column">
+
+<div style="background-color: #0E3B2E; background-image: linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 22px 22px; border-radius: 0 0 40px 40px; padding: 20px 24px 30px 24px; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+<a href="Bien.dc.html" aria-label="Retour à la fiche du bien" style="width: 44px; height: 44px; border-radius: 22px; background: #1D4D3F; display: flex; align-items: center; justify-content: center">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #FFFFFF; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: #B9D3C6">BIEN N° 01 · T2 LA GARDE</span>
+<span style="width: 44px"></span>
+</div>
+
+<div style="margin-top: 26px; display: flex; justify-content: center">
+<button onClick="{{flip}}" aria-label="Basculer entre je gère et je délègue" aria-pressed="{{delegate.pressed}}" style="position: relative; width: 300px; height: 64px; border-radius: 32px; border: none; background: #1D4D3F; padding: 6px; cursor: pointer; display: grid; grid-template-columns: 1fr 1fr">
+<span style="position: absolute; top: 6px; left: {{delegate.knobLeft}}; width: 144px; height: 52px; border-radius: 26px; background: #D7F75B"></span>
+<span style="position: relative; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 17px; font-weight: 700; color: {{delegate.leftColor}}">Je gère</span>
+<span style="position: relative; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 17px; font-weight: 700; color: {{delegate.rightColor}}">Je délègue</span>
+</button>
+</div>
+
+<h1 style="margin: 24px 0 0 0; text-align: center; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.08; color: #FFFFFF">Gardez la main sur l'essentiel,<br>confiez le reste.</h1>
+<p style="margin: 10px 8px 0 8px; text-align: center; font-size: 14px; line-height: 1.5; color: #DCEAE2">Un professionnel reprend ce que vous choisissez. Vous restez propriétaire de vos décisions.</p>
+</div>
+
+<div style="padding: 0 24px; display: flex; flex-direction: column">
+
+<div style="margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em">Ce que vous confiez</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #4A6B5E">3 FORMULES</span>
+</div>
+<div role="radiogroup" aria-label="Formule de délégation" style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{offers}}" as="o" hint-placeholder-count="3">
+<button role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="text-align: left; background: #FFFFFF; border: {{o.border}}; border-radius: 26px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; box-shadow: {{o.shadow}}; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; color: #0E3B2E">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; width: 100%">
+<div style="display: flex; flex-direction: column; gap: 3px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; color: #4A6B5E">{{o.tag}}</span>
+<span style="font-size: 17px; font-weight: 700; line-height: 1.25">{{o.title}}</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0">
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.03em; line-height: 1">{{o.price}}</span>
+<span style="font-size: 11px; color: #3E5C50">{{o.unit}}</span>
+</div>
+</div>
+<span style="font-size: 13.5px; line-height: 1.5; color: #3E5C50">{{o.desc}}</span>
+<sc-if value="{{o.checked}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%">
+<div style="background: #DDF3E4; border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #146B45">ON S'EN CHARGE</span>
+<span style="font-size: 12.5px; line-height: 1.45; color: #164A31">{{o.pro}}</span>
+</div>
+<div style="background: #FFF1C7; border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #6E4700">VOUS GARDEZ</span>
+<span style="font-size: 12.5px; line-height: 1.45; color: #4A3300">{{o.keep}}</span>
+</div>
+</div>
+</sc-if>
+</button>
+</sc-for>
+</div>
+
+<div style="margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em">Votre dossier est prêt</h2>
+</div>
+<div style="margin-top: 12px; background: #FFFFFF; border-radius: 26px; padding: 6px 18px; display: flex; flex-direction: column">
+<sc-for list="{{dossier}}" as="d" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 50px; border-bottom: {{d.border}}">
+<span style="font-size: 14px">{{d.label}}</span>
+<span style="height: 24px; padding: 0 9px; border-radius: 12px; background: #D7F75B; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; display: flex; align-items: center; flex-shrink: 0">{{d.count}}</span>
+</div>
+</sc-for>
+</div>
+<button onClick="{{toggleConsent}}" role="checkbox" aria-checked="{{consent.checked}}" style="margin-top: 12px; text-align: left; background: transparent; border: none; padding: 4px; display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; color: #0E3B2E">
+<span style="flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; border: 2px solid #0E3B2E; background: {{consent.bg}}; display: flex; align-items: center; justify-content: center; box-sizing: border-box">
+<sc-if value="{{consent.on}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #0E3B2E; stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+</span>
+<span style="font-size: 13px; line-height: 1.5; color: #2E4A3F">J'accepte que le dossier de ce bien, y compris les informations sur mon locataire, soit transmis à l'agence partenaire pour préparer notre échange.</span>
+</button>
+
+<div style="margin-top: 22px; display: flex; flex-direction: column; gap: 10px">
+<button onClick="{{send}}" aria-disabled="{{sendDisabled}}" style="height: 56px; border-radius: 28px; border: none; background: {{sendBg}}; color: {{sendFg}}; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 15.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer">{{sendLabel}}
+<span style="width: 28px; height: 28px; border-radius: 14px; background: #D7F75B; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #0E3B2E; stroke-width: 2.6px; stroke-linecap: round; stroke-linejoin: round"><path d="{{sendIcon}}"></path></svg></span>
+</button>
+<sc-if value="{{sent}}" hint-placeholder-val="{{false}}">
+<div style="background: #DDF3E4; border-radius: 18px; padding: 12px 14px; font-size: 13px; line-height: 1.45; color: #164A31">Demande envoyée ! Choisissez maintenant votre créneau de rendez-vous, en visio ou par téléphone.</div>
+</sc-if>
+<p style="margin: 2px 6px 0 6px; text-align: center; font-size: 12.5px; line-height: 1.5; color: #3E5C50">Aucun engagement : un mandat vous sera proposé après l'échange, et vous restez libre de le signer.</p>
+</div>
+
+<div style="margin-top: 26px; background: #FFFFFF; border-radius: 26px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; color: #4A6B5E">AGENCE PARTENAIRE</span>
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.02em">La Maison Garante</span>
+<span style="font-size: 12.5px; line-height: 1.55; color: #3E5C50">Agence immobilière à La Valette-du-Var. Carte professionnelle Transactions et Gestion n° CPI 8306 2026 000 000 019, délivrée par la CCI du Var. Garantie financière Galian. Barème complet des honoraires TTC sur le site de l'agence.</span>
+</div>
+
+</div>
+
+<div style="flex-grow: 1"></div>
+
+<nav aria-label="Navigation principale" style="margin: 0 16px 16px 16px; height: 68px; box-sizing: border-box; border-radius: 34px; background: #0E3B2E; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 8px; gap: 4px">
+<a href="Accueil.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 11l8-6.5 8 6.5V20h-5v-5H9v5H4z"></path></svg>Accueil</a>
+<a href="Bien.dc.html" aria-current="page" style="border-radius: 26px; background: #D7F75B; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #0E3B2E; font-size: 10.5px; font-weight: 700"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 4h16v16H4zM4 10h16M10 10v10"></path></svg>Biens</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 7h16v11H4zM4 11h16M8 15h3"></path></svg>Loyers</a>
+<a href="Agenda.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 6h16v14H4zM8 3v5M16 3v5M4 11h16"></path></svg>Agenda</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M7 3h7l5 5v13H7zM14 3v5h5"></path></svg>Docs</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { delegate: true, offer: 1, consent: false, sent: false };
+  }
+  renderVals() {
+    const defs = [
+      { tag: 'PARTOUT EN FRANCE · PONCTUEL', title: 'Rendez-vous de conseil à distance', price: '120 €', unit: 'de l\u2019heure', desc: 'Un échange en visio pour faire le point sur votre bien et vos options.', pro: 'Un diagnostic de votre situation et un plan d\u2019action clair.', keep: 'Toute la gestion, avec une feuille de route.' },
+      { tag: 'PARTOUT EN FRANCE', title: 'Gestion administrative', price: '5 %', unit: 'des loyers', desc: 'Toute la paperasse est gérée pour vous, à distance.', pro: 'Encaissements, quittances, révisions, régularisations, relances.', keep: 'La mise en location, les visites et les interventions.' },
+      { tag: 'DANS LE VAR', title: 'Gestion complète', price: '7 %', unit: 'des loyers', desc: 'Votre bien est géré de A à Z, sur place.', pro: 'Tout, de la recherche du locataire aux travaux.', keep: 'Les grandes décisions, et un point régulier avec l\u2019agence.' }
+    ];
+    const offers = defs.map((d, i) => {
+      const on = i === this.state.offer;
+      return Object.assign({}, d, {
+        checked: on,
+        border: on ? '2px solid #0E3B2E' : '2px solid transparent',
+        shadow: on ? '5px 5px 0 #0E3B2E' : 'none',
+        pick: () => this.setState({ offer: i })
+      });
+    });
+    const items = [
+      { label: 'Bail et annexes', count: '3 DOCS' },
+      { label: 'Diagnostics', count: '4 DOCS' },
+      { label: 'Factures et devis', count: '4 DOCS' },
+      { label: 'Fiche locataire et garant', count: 'À JOUR' }
+    ];
+    const consent = this.state.consent;
+    const sent = this.state.sent;
+    return {
+      flip: () => this.setState({ delegate: !this.state.delegate }),
+      delegate: {
+        pressed: this.state.delegate ? 'true' : 'false',
+        knobLeft: this.state.delegate ? '150px' : '6px',
+        leftColor: this.state.delegate ? '#B9D3C6' : '#0E3B2E',
+        rightColor: this.state.delegate ? '#0E3B2E' : '#B9D3C6'
+      },
+      offers: offers,
+      dossier: items.map((d, i) => Object.assign({}, d, { border: i === items.length - 1 ? 'none' : '1px dashed #C5D3CB' })),
+      consent: { on: consent, checked: consent ? 'true' : 'false', bg: consent ? '#D7F75B' : '#FFFFFF' },
+      toggleConsent: () => this.setState({ consent: !consent }),
+      send: () => { if (consent) this.setState({ sent: true }); },
+      sendDisabled: consent ? 'false' : 'true',
+      sent: sent,
+      sendLabel: sent ? 'Demande envoyée' : 'Être rappelé ou prendre rendez-vous',
+      sendBg: sent ? '#DDF3E4' : (consent ? '#0E3B2E' : '#9DB3A9'),
+      sendFg: sent ? '#146B45' : '#FFFFFF',
+      sendIcon: sent ? 'M5 12.5l4.5 4.5L19 7.5' : 'M5 12h14M13 6l6 6-6 6'
+    };
+  }
+}
+</script>
+</body>
+</html>

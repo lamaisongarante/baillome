@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Agenda des échéances</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Instrument+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E3B2E}a:hover{color:#06251C}
+</style>
+</helmet>
+<div style="width: 390px; height: 1460px; box-sizing: border-box; background: #F6F8F4; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; color: #0E3B2E; display: flex; flex-direction: column">
+
+<div style="background-color: #0E3B2E; background-image: linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 22px 22px; border-radius: 0 0 40px 40px; padding: 20px 24px 26px 24px; display: flex; flex-direction: column">
+
+<div style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.035em; color: #FFFFFF">Agenda</h1>
+<button aria-label="Réglages des rappels" style="width: 44px; height: 44px; border-radius: 22px; border: none; background: #1D4D3F; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #FFFFFF; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+</button>
+</div>
+
+<div style="margin-top: 6px; font-size: 14px; color: #DCEAE2">3 biens · 9 échéances suivies</div>
+
+<div style="margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="background: #1D4D3F; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; color: #FF9C80; line-height: 1">1</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 500; color: #DCEAE2">CE MOIS-CI</span>
+</div>
+<div style="background: #1D4D3F; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; color: #FFFFFF; line-height: 1">3</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 500; color: #DCEAE2">SOUS 3 MOIS</span>
+</div>
+<div style="background: #D7F75B; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; color: #0E3B2E; line-height: 1">5</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; color: #0E3B2E">RÉGLÉES EN 2026</span>
+</div>
+</div>
+
+</div>
+
+<div style="padding: 0 24px; display: flex; flex-direction: column">
+
+<div style="margin-top: 20px; display: flex; gap: 8px; overflow: hidden">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+<button onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="flex-shrink: 0; height: 38px; padding: 0 14px; border-radius: 19px; border: 1.5px solid #0E3B2E; background: {{f.bg}}; color: {{f.fg}}; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap">{{f.label}}</button>
+</sc-for>
+</div>
+
+<div style="margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em">Novembre</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #4A6B5E">2026</span>
+</div>
+
+<div style="margin-top: 12px; background: #FFFFFF; border: 1.5px solid #0E3B2E; border-radius: 26px; padding: 16px 18px; display: flex; gap: 14px; box-shadow: 5px 5px 0 #0E3B2E">
+<div style="width: 54px; flex-shrink: 0; height: 62px; border-radius: 16px; background: #FFE4DC; display: flex; flex-direction: column; align-items: center; justify-content: center">
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 800; line-height: 1; color: #8F2A14">01</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #8F2A14">NOV</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; color: #8F2A14">J−12 · STUDIO TOULON</span>
+<span style="font-size: 16px; font-weight: 700; line-height: 1.3">Révision du loyer</span>
+<span style="font-size: 13px; line-height: 1.45; color: #3E5C50">553 € au lieu de 540 €, déjà calculé.</span>
+<a href="Envoi.dc.html" style="margin-top: 6px; align-self: flex-start; height: 40px; padding: 0 16px; border-radius: 20px; background: #0E3B2E; color: #FFFFFF; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; text-decoration: none">Préparer l'avis</a>
+</div>
+</div>
+
+<div style="margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em">Décembre</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #4A6B5E">2026</span>
+</div>
+<div style="margin-top: 12px; background: #FFFFFF; border-radius: 26px; padding: 16px 18px; display: flex; gap: 14px">
+<div style="width: 54px; flex-shrink: 0; height: 62px; border-radius: 16px; background: #FFF1C7; display: flex; flex-direction: column; align-items: center; justify-content: center">
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 800; line-height: 1; color: #6E4700">15</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #6E4700">DÉC</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; color: #6E4700">STUDIO · TOULON</span>
+<span style="font-size: 16px; font-weight: 700; line-height: 1.3">Assurance du logement à renouveler</span>
+<span style="font-size: 13px; line-height: 1.45; color: #3E5C50">Pensez à demander l'attestation de votre locataire.</span>
+</div>
+</div>
+
+<div style="margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em">Janvier</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #4A6B5E">2027</span>
+</div>
+<div style="margin-top: 12px; background: #FFFFFF; border-radius: 26px; padding: 16px 18px; display: flex; gap: 14px">
+<div style="width: 54px; flex-shrink: 0; height: 62px; border-radius: 16px; background: #DDF3E4; display: flex; flex-direction: column; align-items: center; justify-content: center">
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 800; line-height: 1; color: #146B45">31</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #146B45">JAN</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; color: #146B45">STUDIO · TOULON</span>
+<span style="font-size: 16px; font-weight: 700; line-height: 1.3">Régularisation des charges</span>
+<span style="font-size: 13px; line-height: 1.45; color: #3E5C50">Le décompte se prépare à partir de vos factures rangées dans le coffre.</span>
+</div>
+</div>
+
+<div style="margin-top: 32px; background: #0E3B2E; border-radius: 28px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em; color: #FFFFFF">Horizon</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #B9D3C6">LONG TERME</span>
+</div>
+<p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #DCEAE2">Les grandes échéances qui se préparent des années à l'avance.</p>
+<div style="position: relative; padding-left: 22px; display: flex; flex-direction: column; gap: 18px">
+<div style="position: absolute; left: 6px; top: 6px; bottom: 6px; width: 2px; background: #2A5A4B"></div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 2px">
+<span style="position: absolute; left: -22px; top: 3px; width: 14px; height: 14px; border-radius: 7px; background: #FF7A59; border: 3px solid #0E3B2E; box-sizing: border-box"></span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: #FF9C80">01.01.2028 · T2 LA GARDE</span>
+<span style="font-size: 15px; font-weight: 600; color: #FFFFFF">La classe F ne suffira plus pour louer</span>
+<a href="#" style="height: 36px; display: flex; align-items: center; font-size: 13.5px; font-weight: 700; color: #D7F75B; text-decoration: none">Voir le plan de travaux →</a>
+</div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 2px">
+<span style="position: absolute; left: -22px; top: 3px; width: 14px; height: 14px; border-radius: 7px; background: #D7F75B; border: 3px solid #0E3B2E; box-sizing: border-box"></span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: #B9D3C6">2031 · STUDIO TOULON</span>
+<span style="font-size: 15px; font-weight: 600; color: #FFFFFF">Fin de validité du DPE</span>
+</div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 2px">
+<span style="position: absolute; left: -22px; top: 3px; width: 14px; height: 14px; border-radius: 7px; background: #D7F75B; border: 3px solid #0E3B2E; box-sizing: border-box"></span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: #B9D3C6">01.01.2034 · TOUS LES BIENS</span>
+<span style="font-size: 15px; font-weight: 600; color: #FFFFFF">La classe E ne suffira plus pour louer</span>
+</div>
+</div>
+</div>
+
+<div style="margin-top: 20px; background: #FFFFFF; border-radius: 24px; padding: 16px 18px; display: flex; align-items: center; gap: 14px">
+<span style="width: 44px; height: 44px; border-radius: 14px; background: #D7F75B; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #0E3B2E; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg>
+</span>
+<div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1">
+<span style="font-size: 14.5px; font-weight: 700">Rappels activés</span>
+<span style="font-size: 12.5px; color: #3E5C50">Notification et email, 45 jours avant</span>
+</div>
+<span role="switch" aria-checked="true" aria-label="Rappels activés" style="width: 50px; height: 30px; border-radius: 15px; background: #0E3B2E; display: flex; align-items: center; justify-content: flex-end; padding: 0 4px; box-sizing: border-box"><span style="width: 22px; height: 22px; border-radius: 11px; background: #D7F75B"></span></span>
+</div>
+
+</div>
+
+<div style="flex-grow: 1"></div>
+
+<nav aria-label="Navigation principale" style="margin: 0 16px 16px 16px; height: 68px; box-sizing: border-box; border-radius: 34px; background: #0E3B2E; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 8px; gap: 4px">
+<a href="Accueil.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 11l8-6.5 8 6.5V20h-5v-5H9v5H4z"></path></svg>Accueil</a>
+<a href="Bien.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 4h16v16H4zM4 10h16M10 10v10"></path></svg>Biens</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 7h16v11H4zM4 11h16M8 15h3"></path></svg>Loyers</a>
+<a href="Agenda.dc.html" aria-current="page" style="border-radius: 26px; background: #D7F75B; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #0E3B2E; font-size: 10.5px; font-weight: 700"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 6h16v14H4zM8 3v5M16 3v5M4 11h16"></path></svg>Agenda</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M7 3h7l5 5v13H7zM14 3v5h5"></path></svg>Docs</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1460}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: 'Tout' };
+  }
+  renderVals() {
+    const labels = ['Tout', 'Urgent', 'Loyers', 'Diagnostics', 'Fiscalité'];
+    return {
+      filters: labels.map((l) => {
+        const on = l === this.state.filter;
+        return { label: l, pressed: on ? 'true' : 'false', bg: on ? '#0E3B2E' : 'transparent', fg: on ? '#FFFFFF' : '#0E3B2E', pick: () => this.setState({ filter: l }) };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

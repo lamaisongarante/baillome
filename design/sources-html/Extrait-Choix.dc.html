@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Extrait de compte : choix de la période</title><script src="./support.js"></script></head><body>
+<x-dc><helmet><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Instrument+Sans:wght@400;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap"><style>body{margin:0}</style></helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F8F4; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; color: #0E3B2E; display: flex; flex-direction: column">
+<div style="background-color: #0E3B2E; background-image: linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 22px 22px; border-radius: 0 0 36px 36px; padding: 20px 22px 22px 22px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="width: 40px; height: 40px; border-radius: 20px; background: #1D4D3F; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #FFFFFF; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><path d="M15 5l-7 7 7 7"></path></svg></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.06em; color: #B9D3C6">LOCATAIRE · GARAGE HYÈRES</span><span style="width: 40px"></span></div>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.035em; color: #FFFFFF">Extrait de compte</h1>
+<span style="font-size: 13.5px; color: #DCEAE2">Appels et encaissements, avec le solde à chaque date.</span>
+</div>
+<div style="padding: 20px 20px 0 20px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; color: #4A6B5E">PÉRIODE</span>
+<div role="radiogroup" aria-label="Période" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #E6ECE8; border-radius: 24px; padding: 4px">
+<button role="radio" aria-checked="{{allChecked}}" onClick="{{pickAll}}" style="height: 44px; border-radius: 20px; border: none; background: {{allBg}}; color: #0E3B2E; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">Tout le compte</button>
+<button role="radio" aria-checked="{{rangeChecked}}" onClick="{{pickRange}}" style="height: 44px; border-radius: 20px; border: none; background: {{rangeBg}}; color: #0E3B2E; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">De date à date</button>
+</div>
+<sc-if value="{{range}}" hint-placeholder-val="{true}">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+<div style="background: #FFFFFF; border-radius: 18px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #4A6B5E">DU</span><span style="font-size: 15px; font-weight: 700">01.07.2026</span></div>
+<div style="background: #FFFFFF; border-radius: 18px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #4A6B5E">AU</span><span style="font-size: 15px; font-weight: 700">20.10.2026</span></div>
+</div>
+</sc-if>
+<div style="background: #FFFFFF; border: 1.5px solid #0E3B2E; border-radius: 24px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 5px 5px 0 #0E3B2E">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; color: #4A6B5E">{{periodLabel}}</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+<div style="display: flex; flex-direction: column"><span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 800">{{calls}}</span><span style="font-size: 12px; color: #3E5C50">appelés</span></div>
+<div style="display: flex; flex-direction: column"><span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 800">{{paid}}</span><span style="font-size: 12px; color: #3E5C50">encaissés</span></div>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #C5D3CB; padding-top: 10px"><span style="font-size: 14px; font-weight: 700">Solde au 20.10.2026</span><span style="height: 28px; padding: 0 12px; border-radius: 14px; background: #FFE4DC; color: #8F2A14; font-size: 13px; font-weight: 700; display: flex; align-items: center">45 € dus</span></div>
+</div>
+<p style="margin: 0 4px; font-size: 12px; line-height: 1.5; color: #3E5C50">Le dépôt de garantie apparaît pour information, hors solde. Pour une période choisie, le solde antérieur est reporté en première ligne.</p>
+</div>
+<div style="flex-grow: 1"></div>
+<div style="padding: 0 20px 26px 20px; display: flex; flex-direction: column; gap: 10px">
+<button onClick="{{gen}}" style="height: 54px; border-radius: 27px; border: none; background: {{genBg}}; color: {{genFg}}; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 700; cursor: pointer">{{genLabel}}</button>
+<span style="height: 46px; border-radius: 23px; border: 1.5px solid #0E3B2E; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">Envoyer au locataire par email</span>
+<span style="text-align: center; font-size: 11.5px; color: #3E5C50">Jamais envoyé automatiquement : c'est vous qui décidez.</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { range: true, done: false }; }
+  renderVals() {
+    const r = this.state.range;
+    return {
+      range: r,
+      allChecked: r ? 'false' : 'true', rangeChecked: r ? 'true' : 'false',
+      allBg: r ? 'transparent' : '#D7F75B', rangeBg: r ? '#D7F75B' : 'transparent',
+      pickAll: () => this.setState({ range: false, done: false }),
+      pickRange: () => this.setState({ range: true, done: false }),
+      periodLabel: r ? 'DU 01.07.2026 AU 20.10.2026 · 8 ÉCRITURES' : 'DEPUIS LE DÉBUT DU BAIL (01.03.2025) · 40 ÉCRITURES',
+      calls: r ? '380 €' : '1 900 €',
+      paid: r ? '335 €' : '1 855 €',
+      gen: () => this.setState({ done: true }),
+      genLabel: this.state.done ? 'PDF généré · rangé dans le coffre ✓' : 'Générer le PDF',
+      genBg: this.state.done ? '#D7F75B' : '#0E3B2E',
+      genFg: this.state.done ? '#0E3B2E' : '#FFFFFF'
+    };
+  }
+}
+</script></body></html>

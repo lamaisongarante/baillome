@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bail nu — page des signatures</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Instrument+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0}
+.f{border-bottom:1.5px dotted #0E3B2E;padding:0 2px;font-weight:600;color:#0E3B2E}
+.cb{display:inline-flex;width:10px;height:10px;border:1.3px solid #0E3B2E;border-radius:2px;vertical-align:-1px;margin-right:4px;box-sizing:border-box}
+.on{background:#0E3B2E}
+</style>
+</helmet>
+<div style="width: 794px; height: 1123px; box-sizing: border-box; background: #FFFFFF; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 11.5px; line-height: 1.5; color: #0E3B2E; padding: 44px 64px 36px 64px; display: flex; flex-direction: column">
+
+<div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1.5px solid #0E3B2E">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="width: 24px; height: 24px; border-radius: 7px; border: 1.5px solid #0E3B2E; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="17" height="17" viewBox="0 0 100 100" aria-hidden="true"><path d="M15 47 L50 18 L85 47" style="fill: none; stroke: #0E3B2E; stroke-width: 11px; stroke-linecap: round; stroke-linejoin: round"></path><path d="M25 41 V81 H75 V41" style="fill: none; stroke: #0E3B2E; stroke-width: 11px; stroke-linecap: round; stroke-linejoin: round"></path><rect x="31" y="51" width="38" height="22" rx="11" style="fill: none; stroke: #0E3B2E; stroke-width: 7px"></rect><circle cx="58" cy="62" r="7.5" style="fill: #0E3B2E"></circle></svg></span>
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 800; letter-spacing: -0.03em">Baillome</span>
+</div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: 0.05em; color: #4A6B5E">CONTRAT DE LOCATION · LOGEMENT VIDE · PAGE 9 / 9</span>
+</div>
+
+<h2 style="margin: 24px 0 8px 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7FA596">VIII.</span>Clause résolutoire</h2>
+<p style="margin: 0">Le contrat de location est résilié de plein droit pour défaut de paiement du loyer ou des charges aux termes convenus ou pour non versement du dépôt de garantie. La clause de résiliation de plein droit ne produit effet que six semaines après la date d'un commandement de payer demeuré infructueux.</p>
+<p style="margin: 8px 0 4px 0">Le cas échéant, Modalités de résiliation de plein droit du contrat pour des motifs autres que le défaut de paiement du loyer ou des charges ou le non versement du dépôt de garantie : le contrat de location est résilié de plein droit :</p>
+<div style="display: flex; flex-direction: column; gap: 6px; padding-left: 4px">
+<div style="display: flex; gap: 8px"><span class="cb on" style="margin-top: 3px; flex-shrink: 0"></span><span>pour la non-souscription d'une assurance des risques locatifs, cette clause ne produisant effet qu'un mois après commandement demeuré infructueux ;</span></div>
+<div style="display: flex; gap: 8px"><span class="cb on" style="margin-top: 3px; flex-shrink: 0"></span><span>pour le non-respect de l'obligation d'user paisiblement des locaux loués, résultant de troubles de voisinage constatés par une décision de justice passée en force de chose jugée.</span></div>
+</div>
+
+<h2 style="margin: 22px 0 8px 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7FA596">X.</span>Autres conditions particulières</h2>
+<p style="margin: 0; color: #3E5C50">Néant.</p>
+
+<h2 style="margin: 22px 0 8px 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7FA596">XI.</span>Annexes</h2>
+<p style="margin: 0 0 8px 0">Sont annexées et jointes au contrat de location les pièces suivantes :</p>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+<sc-for list="{{annexes}}" as="a" hint-placeholder-count="6">
+<div style="display: flex; align-items: flex-start; gap: 8px; border: 1px solid #DCE5DF; border-radius: 10px; padding: 9px 11px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #7FA596; flex-shrink: 0">{{a.letter}}</span>
+<div style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 11px; font-weight: 600">{{a.title}}</span><span style="font-size: 9.5px; color: #3E5C50">{{a.meta}}</span></div>
+</div>
+</sc-for>
+</div>
+
+<p style="margin: 22px 0 12px 0">Le <span class="f">28.10.2026</span>, à <span class="f">La Garde</span></p>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+<sc-for list="{{signers}}" as="s" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 11px; font-weight: 700">{{s.role}}</span>
+<div style="border: 1.5px solid #0E3B2E; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; position: relative; overflow: hidden">
+<div style="position: relative; display: flex; align-items: center; gap: 8px">
+<span style="width: 22px; height: 22px; border-radius: 11px; border: 1.5px solid #0E3B2E; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #0E3B2E; stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em">SIGNATURE ÉLECTRONIQUE AVANCÉE</span>
+</div>
+<span style="position: relative; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 800; letter-spacing: -0.02em">{{s.name}}</span>
+<div style="position: relative; display: flex; flex-direction: column; gap: 1px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #3E5C50">
+<span>{{s.time}}</span>
+<span>CODE SMS VÉRIFIÉ · [PRESTATAIRE]</span>
+<span>HORODATAGE · EMPREINTE [HASH]</span>
+</div>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="flex-grow: 1"></div>
+
+<p style="margin: 0 0 10px 0; font-size: 9.5px; font-style: italic; color: #4A6B5E">Contrat type issu de l'annexe 1 du décret n° 2015-587 du 29 mai 2015, dans sa version issue du décret n° 2026-596 du 6 juillet 2026.</p>
+<div style="border-top: 1px solid #DCE5DF; padding-top: 10px; display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #4A6B5E">
+<span>DOCUMENT SIGNÉ ÉLECTRONIQUEMENT · SIGNATURE AVANCÉE · DOSSIER DE PREUVE [RÉFÉRENCE]</span>
+<span>UN EXEMPLAIRE PAR PARTIE</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":794,"height":1123}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      annexes: [
+        { letter: 'A', title: 'Extrait du règlement de copropriété', meta: 'Destination, parties privatives et communes, charges' },
+        { letter: 'B', title: 'Dossier de diagnostic technique', meta: 'DPE, électricité, état des risques' },
+        { letter: 'C', title: 'Notice d\u2019information', meta: 'Droits et obligations des parties, version en vigueur' },
+        { letter: 'D', title: 'État des lieux d\u2019entrée', meta: 'Établi à la remise des clés' },
+        { letter: '+', title: 'Acte de cautionnement', meta: 'Document distinct, signé par le garant' },
+        { letter: '+', title: 'Attestation d\u2019assurance habitation', meta: 'À fournir par le locataire à la remise des clés' }
+      ],
+      signers: [
+        { role: 'Signature du bailleur', name: '[Prénom Nom]', time: 'LE 28.10.2026 À 14:32' },
+        { role: 'Signature du locataire', name: '[Prénom Nom]', time: 'LE 28.10.2026 À 18:05' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

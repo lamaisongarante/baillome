@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fiche du bien — Appartement T2</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Instrument+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E3B2E}a:hover{color:#06251C}
+</style>
+</helmet>
+<div style="width: 390px; height: 2260px; box-sizing: border-box; background: #F6F8F4; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; color: #0E3B2E; display: flex; flex-direction: column">
+
+<div style="background-color: #0E3B2E; background-image: linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 22px 22px; border-radius: 0 0 40px 40px; padding: 20px 24px 24px 24px; display: flex; flex-direction: column">
+
+<div style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+<a href="Accueil.dc.html" aria-label="Retour à l'accueil" style="width: 44px; height: 44px; border-radius: 22px; background: #1D4D3F; display: flex; align-items: center; justify-content: center">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #FFFFFF; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: #B9D3C6">BIEN N° 01</span>
+<button aria-label="Modifier le bien" style="width: 44px; height: 44px; border-radius: 22px; border: none; background: #1D4D3F; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #FFFFFF; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13 7l4 4"></path></svg>
+</button>
+</div>
+
+<div style="margin-top: 18px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.05; color: #FFFFFF">Appartement T2</h1>
+<span style="font-size: 14px; color: #DCEAE2">La Garde · 48 m² · location nue</span>
+</div>
+<a href="Resultat-Hybride.dc.html" style="flex-shrink: 0; text-decoration: none; background: #D7F75B; border-radius: 20px; padding: 8px 12px; display: flex; flex-direction: column; align-items: center">
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: #0E3B2E">62</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #0E3B2E">/100</span>
+</a>
+</div>
+
+<div style="margin-top: 18px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; background: #1D4D3F; border-radius: 22px; padding: 4px" role="tablist" aria-label="Sections du bien">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+<button role="tab" aria-selected="{{t.selected}}" onClick="{{t.pick}}" style="height: 40px; border-radius: 18px; border: none; background: {{t.bg}}; color: {{t.fg}}; font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; cursor: pointer">{{t.label}}</button>
+</sc-for>
+</div>
+
+</div>
+
+<div style="padding: 0 24px; display: flex; flex-direction: column">
+
+<div style="margin-top: 22px; background: #FFFFFF; border-radius: 26px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: #0E3B2E">IDENTIFIANT FISCAL DU LOGEMENT</span>
+<span style="height: 24px; padding: 0 9px; border-radius: 12px; background: #D7F75B; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; display: flex; align-items: center">OK · 12 CHIFFRES</span>
+</div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600; letter-spacing: 0.08em">83 · [10 chiffres]</span>
+<span style="font-size: 12.5px; line-height: 1.45; color: #3E5C50">Obligatoire dans le bail. Il commence par le numéro du département et se trouve sur impots.gouv.fr, rubrique « Biens immobiliers ».</span>
+<a href="#" style="align-self: flex-start; height: 36px; display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; color: #0E3B2E; text-decoration: none">Où le trouver ? <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #0E3B2E; stroke-width: 2.4px; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+</div>
+
+<div style="margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em">Le bail</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #4A6B5E">EN COURS</span>
+</div>
+<div style="margin-top: 12px; background: #FFFFFF; border-radius: 26px; padding: 6px 18px; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; height: 50px; border-bottom: 1px dashed #C5D3CB">
+<span style="font-size: 14px; color: #3E5C50">Loyer hors charges</span>
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.02em">700 €</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; height: 50px; border-bottom: 1px dashed #C5D3CB">
+<span style="font-size: 14px; color: #3E5C50">Provisions sur charges</span>
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.02em">60 €</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; height: 50px; border-bottom: 1px dashed #C5D3CB">
+<span style="font-size: 14px; color: #3E5C50">Dépôt de garantie</span>
+<span style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.02em">700 €</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; height: 50px; border-bottom: 1px dashed #C5D3CB">
+<span style="font-size: 14px; color: #3E5C50">Signé le</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600">01.11.2023</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; height: 56px">
+<span style="font-size: 14px; color: #3E5C50">Révision annuelle</span>
+<span style="height: 28px; padding: 0 12px; border-radius: 14px; background: #FFF1C7; font-size: 12.5px; font-weight: 700; color: #6E4700; display: flex; align-items: center; gap: 6px">
+<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #6E4700; stroke-width: 2.4px; stroke-linecap: round; stroke-linejoin: round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>Bloquée · classe F</span>
+</div>
+</div>
+<p style="margin: 10px 4px 0 4px; font-size: 12.5px; line-height: 1.5; color: #3E5C50">Votre loyer reste à 700 € tant que le logement est classé F. Il pourra de nouveau évoluer après les travaux.</p>
+
+<div style="margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em">Le locataire</h2>
+</div>
+<div style="margin-top: 12px; background: #FFFFFF; border-radius: 26px; padding: 16px 18px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="width: 48px; height: 48px; border-radius: 24px; background: #DDF3E4; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #146B45; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 16px; font-weight: 700">[Prénom Nom]</span>
+<span style="font-size: 13px; color: #3E5C50">Dans les lieux depuis 3 ans</span>
+</div>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="height: 30px; padding: 0 12px; border-radius: 15px; background: #D7F75B; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: #0E3B2E; display: flex; align-items: center">OK · ASSURANCE 2026</span>
+<span style="height: 30px; padding: 0 12px; border-radius: 15px; background: #D7F75B; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: #0E3B2E; display: flex; align-items: center">OK · LOYERS À JOUR</span>
+</div>
+<a href="Locataire.dc.html" style="align-self: flex-start; height: 40px; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #0E3B2E; text-decoration: none">Voir la fiche locataire et le garant <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #0E3B2E; stroke-width: 2.4px; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+</div>
+
+<div style="margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em">Les assurances</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #4A6B5E">2 CONTRATS</span>
+</div>
+<div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px">
+<div style="background: #FFFFFF; border-radius: 26px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: #0E3B2E">PROPRIÉTAIRE NON OCCUPANT</span>
+<span style="height: 24px; padding: 0 9px; border-radius: 12px; background: #D7F75B; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; display: flex; align-items: center">OK</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #3E5C50">Assureur</span><span style="font-size: 14.5px; font-weight: 700">[Assureur]</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #3E5C50">N° de police</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; font-weight: 600">[N° de police]</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #3E5C50">Échéance</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; font-weight: 600">01.03.2027</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #3E5C50">Contrat</span><span style="font-size: 14.5px; font-weight: 700">Dans le coffre</span></div>
+</div>
+</div>
+<a href="Locataire.dc.html" style="background: #FFFFFF; border-radius: 26px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: #0E3B2E">
+<div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600">HABITATION DU LOCATAIRE</span>
+<span style="font-size: 14.5px; font-weight: 700">Attestation 2026 reçue</span>
+<span style="font-size: 12.5px; color: #3E5C50">Valable jusqu'au 15.12.2026 · relance automatique</span>
+</div>
+<span style="height: 24px; padding: 0 9px; border-radius: 12px; background: #D7F75B; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; display: flex; align-items: center">OK</span>
+</a>
+</div>
+
+<div style="margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em">Le coffre</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #4A6B5E">14 DOCUMENTS</span>
+</div>
+<div style="margin-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{docs}}" as="d" hint-placeholder-count="8">
+<a href="#" style="background: {{d.bg}}; border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: #0E3B2E; min-height: 112px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="width: 34px; height: 34px; border-radius: 11px; background: #FFFFFF; display: flex; align-items: center; justify-content: center">
+<svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #0E3B2E; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5"></path></svg>
+</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: {{d.statusColor}}">{{d.status}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; font-weight: 700; line-height: 1.25">{{d.title}}</span>
+<span style="font-size: 12px; color: #3E5C50">{{d.meta}}</span>
+</div>
+</a>
+</sc-for>
+</div>
+<div style="margin-top: 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<a href="#" style="height: 50px; border-radius: 25px; background: #0E3B2E; color: #FFFFFF; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none">
+<svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #D7F75B; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3"></path><path d="M8 12h8"></path></svg>Scanner</a>
+<a href="#" style="height: 50px; border-radius: 25px; border: 1.5px solid #0E3B2E; color: #0E3B2E; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #0E3B2E; stroke-width: 2.2px; stroke-linecap: round"><path d="M12 5v14M5 12h14"></path></svg>Facture</a>
+</div>
+
+<div style="margin-top: 26px; background: #D7F75B; border-radius: 28px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #2E5A20">JE DÉLÈGUE</span>
+<div style="font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; color: #0E3B2E">Confier ce bien à un professionnel</div>
+<p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #1E4A3C">Son dossier complet est prêt : bail, diagnostics et factures seront transmis en un geste, avec votre accord.</p>
+<a href="Delegue.dc.html" style="align-self: flex-start; height: 44px; padding: 0 18px; border-radius: 22px; background: #0E3B2E; color: #FFFFFF; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none">Voir les options</a>
+</div>
+
+</div>
+
+<div style="flex-grow: 1"></div>
+
+<nav aria-label="Navigation principale" style="margin: 0 16px 16px 16px; height: 68px; box-sizing: border-box; border-radius: 34px; background: #0E3B2E; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 8px; gap: 4px">
+<a href="Accueil.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 11l8-6.5 8 6.5V20h-5v-5H9v5H4z"></path></svg>Accueil</a>
+<a href="Bien.dc.html" aria-current="page" style="border-radius: 26px; background: #D7F75B; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #0E3B2E; font-size: 10.5px; font-weight: 700"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 4h16v16H4zM4 10h16M10 10v10"></path></svg>Biens</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 7h16v11H4zM4 11h16M8 15h3"></path></svg>Loyers</a>
+<a href="Agenda.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 6h16v14H4zM8 3v5M16 3v5M4 11h16"></path></svg>Agenda</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B9D3C6; font-size: 10.5px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round"><path d="M7 3h7l5 5v13H7zM14 3v5h5"></path></svg>Docs</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2260}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'Aperçu' };
+  }
+  renderVals() {
+    const labels = ['Aperçu', 'Bail', 'Coffre', 'Finances'];
+    const docs = [
+      { title: 'Bail signé', meta: '01.11.2023 · PDF', status: 'OK', statusColor: '#146B45', bg: '#FFFFFF' },
+      { title: 'DPE', meta: 'Classe F · 2022', status: 'À AMÉLIORER', statusColor: '#6E4700', bg: '#FFF1C7' },
+      { title: 'État des risques', meta: 'Plus de 6 mois', status: 'EXPIRÉ', statusColor: '#8F2A14', bg: '#FFE4DC' },
+      { title: 'Diagnostic électricité', meta: 'Valable jusqu\u2019en 2028', status: 'OK', statusColor: '#146B45', bg: '#FFFFFF' },
+      { title: 'État des lieux d\u2019entrée', meta: '01.11.2023 · 24 photos', status: 'OK', statusColor: '#146B45', bg: '#FFFFFF' },
+      { title: 'Factures et devis', meta: '4 documents · 2026', status: '2 DÉDUCTIBLES', statusColor: '#146B45', bg: '#FFFFFF' },
+      { title: 'Assurance du locataire', meta: 'Attestation 2026', status: 'OK', statusColor: '#146B45', bg: '#FFFFFF' },
+      { title: 'Assurance PNO', meta: 'Contrat · échéance 03.2027', status: 'OK', statusColor: '#146B45', bg: '#FFFFFF' }
+    ];
+    return {
+      docs: docs,
+      tabs: labels.map((l) => {
+        const on = l === this.state.tab;
+        return { label: l, selected: on ? 'true' : 'false', bg: on ? '#D7F75B' : 'transparent', fg: on ? '#0E3B2E' : '#DCEAE2', pick: () => this.setState({ tab: l }) };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>
