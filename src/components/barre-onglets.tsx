@@ -9,7 +9,7 @@ import { couleurs, polices } from '@/theme/tokens';
  * Barre de navigation des maquettes : pilule vert pin flottante,
  * onglet actif sur fond citron.
  */
-export function BarreOnglets({ state, descriptors, emitter, navigateToTab }: BottomTabBarProps) {
+export function BarreOnglets({ state, descriptors, navigation }: BottomTabBarProps) {
   const marges = useSafeAreaInsets();
 
   return (
@@ -22,13 +22,13 @@ export function BarreOnglets({ state, descriptors, emitter, navigateToTab }: Bot
           const icone = (route.name === 'index' ? 'accueil' : route.name) as NomIcone;
 
           const ouvrir = () => {
-            const evenement = emitter.emit({
+            const evenement = navigation.emit({
               type: 'tabPress',
               target: route.key,
               canPreventDefault: true,
             });
             if (!actif && !evenement.defaultPrevented) {
-              navigateToTab(route.key);
+              navigation.navigate(route.name, route.params);
             }
           };
 
