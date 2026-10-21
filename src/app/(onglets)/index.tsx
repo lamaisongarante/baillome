@@ -1,40 +1,59 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
+import { setStatusBarStyle } from 'expo-status-bar';
+import { useCallback } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BandeauPin } from '@/components/bandeau-pin';
+import { Icone } from '@/components/icones';
+import { LogoTuile } from '@/components/logo';
 import { arrondis, couleurs, espaces, polices } from '@/theme/tokens';
 
+/**
+ * Accueil, d'après la maquette 01 (design/sources-html/Accueil.dc.html).
+ * Le score, les biens et les échéances arriveront avec les étapes 1 et 2.
+ */
 export default function Accueil() {
+  const marges = useSafeAreaInsets();
+
+  // Le bandeau est sombre : heure et batterie en blanc sur cet écran.
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle('dark');
+    }, []),
+  );
+
   return (
-    <SafeAreaView style={styles.page} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.contenu}>
+    <ScrollView style={styles.page} contentContainerStyle={styles.contenu}>
+      <BandeauPin style={[styles.bandeau, { paddingTop: marges.top + 20 }]}>
         <View style={styles.entete}>
-          <Text style={styles.marque}>Baillome</Text>
-          {/* L'avatar mènera au compte (étape 1). */}
-          <View style={styles.avatar}>
-            <Text style={styles.initiale}>S</Text>
+          <View style={styles.marque}>
+            <LogoTuile />
+            <Text style={styles.logotype}>Baillome</Text>
           </View>
+          <Pressable
+            style={styles.boutonRond}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications">
+            <Icone nom="cloche" couleur={couleurs.surPin} taille={19} epaisseur={1.8} />
+          </Pressable>
         </View>
 
-        <BandeauPin>
-          <Text style={styles.bonjour}>Bonjour</Text>
-          <Text style={styles.accroche}>
-            Votre gestion locative, en règle et sans stress.
-          </Text>
-          <View style={styles.pastilleOk}>
-            <Text style={styles.pastilleOkTexte}>OK</Text>
-          </View>
-        </BandeauPin>
+        <Text style={styles.bonjour}>Bonjour</Text>
+        <Text style={styles.sousTitre}>Voici où en est votre patrimoine.</Text>
+      </BandeauPin>
 
+      <View style={styles.corps}>
         <View style={styles.carte}>
           <Text style={styles.legende}>ÉTAPE 0 · PRÉPARATION</Text>
           <Text style={styles.texte}>
-            Ceci est la toute première version de l’application. Les onglets sont en place ; leur
-            contenu arrive étape par étape.
+            Ceci est la toute première version de l’application. Votre score, vos biens et vos
+            prochaines échéances s’afficheront ici.
           </Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -44,71 +63,72 @@ const styles = StyleSheet.create({
     backgroundColor: couleurs.fond,
   },
   contenu: {
-    padding: espaces.l,
-    gap: espaces.l,
+    paddingBottom: espaces.l,
+  },
+  bandeau: {
+    borderBottomLeftRadius: arrondis.bandeau,
+    borderBottomRightRadius: arrondis.bandeau,
+    paddingHorizontal: 24,
+    paddingBottom: 28,
   },
   entete: {
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   marque: {
-    fontFamily: polices.titre,
-    fontSize: 28,
-    color: couleurs.pin,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: arrondis.pilule,
-    backgroundColor: couleurs.pin,
+  logotype: {
+    fontFamily: polices.titreFort,
+    fontSize: 19,
+    letterSpacing: -0.66,
+    color: couleurs.surPin,
+  },
+  boutonRond: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: couleurs.pinClair,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  initiale: {
-    fontFamily: polices.interfaceGras,
-    color: couleurs.surPin,
-    fontSize: 16,
-  },
   bonjour: {
+    marginTop: 22,
     fontFamily: polices.titre,
-    fontSize: 40,
+    fontSize: 26,
+    letterSpacing: -0.78,
     color: couleurs.surPin,
   },
-  accroche: {
+  sousTitre: {
+    marginTop: 2,
     fontFamily: polices.interface,
-    fontSize: 17,
-    lineHeight: 24,
-    color: couleurs.surPin,
+    fontSize: 14,
+    color: couleurs.surPinDoux,
   },
-  pastilleOk: {
-    alignSelf: 'flex-start',
-    backgroundColor: couleurs.citron,
-    borderRadius: arrondis.pilule,
-    paddingHorizontal: espaces.m,
-    paddingVertical: espaces.xs,
-  },
-  pastilleOkTexte: {
-    fontFamily: polices.interfaceGras,
-    color: couleurs.pin,
-    fontSize: 13,
+  corps: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
   },
   carte: {
     backgroundColor: couleurs.carte,
-    borderRadius: arrondis.tuile,
-    padding: espaces.l,
+    borderRadius: arrondis.carteBien,
+    padding: 20,
     gap: espaces.s,
   },
   legende: {
     fontFamily: polices.technique,
     fontSize: 11,
-    letterSpacing: 1,
+    letterSpacing: 0.66,
     color: couleurs.texteDiscret,
   },
   texte: {
     fontFamily: polices.interface,
-    fontSize: 16,
-    lineHeight: 23,
-    color: couleurs.texte,
+    fontSize: 14,
+    lineHeight: 21,
+    color: couleurs.texteSecondaire,
   },
 });

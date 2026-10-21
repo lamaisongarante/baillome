@@ -1,12 +1,14 @@
 import {
   BricolageGrotesque_600SemiBold,
   BricolageGrotesque_700Bold,
+  BricolageGrotesque_800ExtraBold,
 } from '@expo-google-fonts/bricolage-grotesque';
-import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono';
+import { IBMPlexMono_500Medium, IBMPlexMono_600SemiBold } from '@expo-google-fonts/ibm-plex-mono';
 import {
   InstrumentSans_400Regular,
   InstrumentSans_500Medium,
   InstrumentSans_600SemiBold,
+  InstrumentSans_700Bold,
 } from '@expo-google-fonts/instrument-sans';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -23,10 +25,13 @@ export default function RootLayout() {
   const [policesChargees, erreur] = useFonts({
     BricolageGrotesque_600SemiBold,
     BricolageGrotesque_700Bold,
+    BricolageGrotesque_800ExtraBold,
     InstrumentSans_400Regular,
     InstrumentSans_500Medium,
     InstrumentSans_600SemiBold,
-    IBMPlexMono_400Regular,
+    InstrumentSans_700Bold,
+    IBMPlexMono_500Medium,
+    IBMPlexMono_600SemiBold,
   });
 
   useEffect(() => {

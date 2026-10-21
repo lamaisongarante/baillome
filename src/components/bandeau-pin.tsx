@@ -1,19 +1,27 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { arrondis, couleurs, espaces } from '@/theme/tokens';
+import { couleurs } from '@/theme/tokens';
 
+/** Pas du quadrillage des maquettes (background-size: 22px 22px). */
 const PAS_GRILLE = 22;
+const NB_LIGNES = 40;
 
 /** Bandeau vert pin avec son quadrillage discret. */
-export function BandeauPin({ children }: { children: ReactNode }) {
+export function BandeauPin({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
   return (
-    <View style={styles.bandeau}>
+    <View style={[styles.bandeau, style]}>
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        {Array.from({ length: 24 }, (_, i) => (
+        {Array.from({ length: NB_LIGNES }, (_, i) => (
           <View key={`v${i}`} style={[styles.ligneVerticale, { left: i * PAS_GRILLE }]} />
         ))}
-        {Array.from({ length: 16 }, (_, i) => (
+        {Array.from({ length: NB_LIGNES }, (_, i) => (
           <View key={`h${i}`} style={[styles.ligneHorizontale, { top: i * PAS_GRILLE }]} />
         ))}
       </View>
@@ -25,23 +33,20 @@ export function BandeauPin({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   bandeau: {
     backgroundColor: couleurs.pin,
-    borderRadius: arrondis.grandeTuile,
-    padding: espaces.l,
     overflow: 'hidden',
-    gap: espaces.m,
   },
   ligneVerticale: {
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    width: 1,
+    backgroundColor: couleurs.grille,
   },
   ligneHorizontale: {
     position: 'absolute',
     left: 0,
     right: 0,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    height: 1,
+    backgroundColor: couleurs.grille,
   },
 });
