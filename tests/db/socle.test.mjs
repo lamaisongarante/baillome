@@ -1,0 +1,275 @@
+// Tests de la base de données de l'étape 1 (le socle).
+// Lancer : npm run test:db
+import assert from 'node:assert/strict';
+import { beforeEach, describe, test } from 'node:test';
+
+import { creerBase, creerCompte, enAdmin, enTantQue } from './base-de-test.mjs';
+
+let db;
+let alice;
+let bruno;
+
+async function entiteNomPropre(id) {
+  const { rows } = await enTantQue(db, id, `select id from entites where type = 'nom_propre'`);
+  return rows[0].id;
+}
+
+async function ajouterBien(id, champs = {}) {
+  const entite = champs.entite_id ?? (await entiteNomPropre(id));
+  const { rows } = await enTantQue(
+    db,
+    id,
+    `insert into biens (entite_id, type_bien, identifiant_fiscal) values ($1, $2, $3) returning id, numero`,
+    [entite, champs.type_bien ?? 'appartement', champs.identifiant_fiscal ?? null],
+  );
+  return rows[0];
+}
+
+beforeEach(async () => {
+  db = await creerBase();
+  alice = await creerCompte(db, 'alice@exemple.test');
+  bruno = await creerCompte(db, 'bruno@exemple.test');
+});
+
+describe('création du compte', () => {
+  test('crée le profil en formule Découverte et l’entité « en nom propre »', async () => {
+    const profil = await enTantQue(db, alice, 'select formule from profils');
+    assert.deepEqual(profil.rows, [{ formule: 'decouverte' }]);
+    const entites = await enTantQue(db, alice, 'select type, qualite_bailleur from entites');
+    assert.deepEqual(entites.rows, [{ type: 'nom_propre', qualite_bailleur: 'personne_physique' }]);
+  });
+});
+
+describe('chaque bailleur ne voit que ses données', () => {
+  test('Bruno ne voit ni les biens, ni les entités, ni le profil d’Alice', async () => {
+    await ajouterBien(alice);
+    assert.equal((await enTantQue(db, bruno, 'select * from biens')).rows.length, 0);
+    assert.equal((await enTantQue(db, bruno, 'select * from entites')).rows.length, 1); // la sienne
+    assert.equal((await enTantQue(db, bruno, 'select * from profils')).rows.length, 1); // le sien
+  });
+
+  test('Bruno ne peut pas créer un bien au nom d’Alice', async () => {
+    const entiteAlice = await entiteNomPropre(alice);
+    await assert.rejects(
+      enTantQue(db, bruno, `insert into biens (proprietaire_id, entite_id, type_bien) values ($1, $2, 'maison')`, [
+        alice,
+        entiteAlice,
+      ]),
+      /row-level security/,
+    );
+  });
+
+  test('Bruno ne peut pas rattacher son bien à l’entité d’Alice', async () => {
+    const entiteAlice = await entiteNomPropre(alice);
+    await assert.rejects(ajouterBien(bruno, { entite_id: entiteAlice }), /foreign key/);
+  });
+
+  test('Bruno ne peut ni modifier ni supprimer le bien d’Alice', async () => {
+    const bien = await ajouterBien(alice);
+    const maj = await enTantQue(db, bruno, `update biens set notes = 'piraté' where id = $1`, [bien.id]);
+    const sup = await enTantQue(db, bruno, 'delete from biens where id = $1', [bien.id]);
+    assert.equal(maj.affectedRows, 0);
+    assert.equal(sup.affectedRows, 0);
+    const { rows } = await enAdmin(db, 'select notes from biens where id = $1', [bien.id]);
+    assert.equal(rows[0].notes, null);
+  });
+
+  test('un document ne peut pas pointer vers le dossier d’un autre bailleur', async () => {
+    await assert.rejects(
+      enTantQue(db, bruno, `insert into documents (type_document, titre, fichier_chemin) values ('divers', 'x', $1)`, [
+        `${alice}/vol.pdf`,
+      ]),
+      /check constraint/,
+    );
+  });
+});
+
+describe('limite de biens selon la formule', () => {
+  test('Découverte : 1 bien, le 2e est refusé avec un message clair', async () => {
+    await ajouterBien(alice);
+    await assert.rejects(ajouterBien(alice), /LIMITE_BIENS/);
+  });
+
+  test('Essentiel : 3 biens, le 4e est refusé', async () => {
+    await enAdmin(db, `update profils set formule = 'essentiel' where id = $1`, [alice]);
+    for (let i = 0; i < 3; i++) await ajouterBien(alice);
+    await assert.rejects(ajouterBien(alice), /LIMITE_BIENS/);
+  });
+
+  test('Patrimoine : pas de limite', async () => {
+    await enAdmin(db, `update profils set formule = 'patrimoine' where id = $1`, [alice]);
+    for (let i = 0; i < 12; i++) await ajouterBien(alice);
+    const { rows } = await enTantQue(db, alice, 'select count(*)::int as n from biens');
+    assert.equal(rows[0].n, 12);
+  });
+
+  test('la limite d’un bailleur ne dépend pas des biens des autres', async () => {
+    await ajouterBien(alice);
+    await ajouterBien(bruno); // Bruno a lui aussi droit à son bien
+  });
+
+  test('le bailleur ne peut pas changer lui-même de formule', async () => {
+    await assert.rejects(
+      enTantQue(db, alice, `update profils set formule = 'patrimoine' where id = $1`, [alice]),
+      /permission denied/,
+    );
+  });
+
+  test('il peut en revanche modifier son prénom', async () => {
+    const r = await enTantQue(db, alice, `update profils set prenom = 'Alice' where id = $1`, [alice]);
+    assert.equal(r.affectedRows, 1);
+  });
+});
+
+describe('fiche du bien', () => {
+  test('numérotation automatique propre à chaque bailleur (n° 01, 02…)', async () => {
+    await enAdmin(db, `update profils set formule = 'gestion' where id in ($1, $2)`, [alice, bruno]);
+    assert.equal((await ajouterBien(alice)).numero, 1);
+    assert.equal((await ajouterBien(alice)).numero, 2);
+    assert.equal((await ajouterBien(bruno)).numero, 1);
+  });
+
+  test('le numéro d’un bien ne se modifie pas', async () => {
+    const bien = await ajouterBien(alice);
+    await assert.rejects(
+      enTantQue(db, alice, 'update biens set numero = 7 where id = $1', [bien.id]),
+      /permission denied/,
+    );
+  });
+
+  test('identifiant fiscal : 12 chiffres acceptés', async () => {
+    const bien = await ajouterBien(alice, { identifiant_fiscal: '830123456789' });
+    assert.ok(bien.id);
+  });
+
+  for (const invalide of ['83012345678', '8301234567890', '83A123456789', '83 0123456789']) {
+    test(`identifiant fiscal refusé : « ${invalide} »`, async () => {
+      await assert.rejects(ajouterBien(alice, { identifiant_fiscal: invalide }), /check constraint/);
+    });
+  }
+
+  test('un local accessoire (garage) se rattache au logement', async () => {
+    const bien = await ajouterBien(alice);
+    const r = await enTantQue(
+      db,
+      alice,
+      `insert into locaux_accessoires (bien_id, type, numero_lot) values ($1, 'garage', '12') returning id`,
+      [bien.id],
+    );
+    assert.equal(r.rows.length, 1);
+  });
+
+  test('Bruno ne peut pas rattacher un local au bien d’Alice', async () => {
+    const bien = await ajouterBien(alice);
+    await assert.rejects(
+      enTantQue(db, bruno, `insert into locaux_accessoires (bien_id, type) values ($1, 'cave')`, [bien.id]),
+      /foreign key/,
+    );
+  });
+});
+
+describe('entités', () => {
+  test('l’entité « en nom propre » ne peut pas être supprimée', async () => {
+    const id = await entiteNomPropre(alice);
+    await assert.rejects(enTantQue(db, alice, 'delete from entites where id = $1', [id]), /NOM_PROPRE_PROTEGE/);
+  });
+
+  test('un seul « nom propre » par bailleur', async () => {
+    await assert.rejects(
+      enTantQue(db, alice, `insert into entites (type, nom) values ('nom_propre', 'Bis')`),
+      /duplicate key/,
+    );
+  });
+
+  test('création d’une SCI familiale et rattachement d’un bien', async () => {
+    const { rows } = await enTantQue(
+      db,
+      alice,
+      `insert into entites (type, nom, qualite_bailleur, sci_familiale) values ('sci', 'SCI Les Pins', 'personne_morale', true) returning id`,
+    );
+    const bien = await ajouterBien(alice, { entite_id: rows[0].id });
+    assert.ok(bien.id);
+  });
+
+  test('« SCI familiale » est réservé aux SCI', async () => {
+    await assert.rejects(
+      enTantQue(db, alice, `insert into entites (type, nom, sci_familiale) values ('indivision', 'Indivision X', true)`),
+      /check constraint/,
+    );
+  });
+});
+
+describe('consentements', () => {
+  test('ajoutés avec leur version, jamais modifiés ni supprimés', async () => {
+    await enTantQue(db, alice, `insert into consentements (document, version) values ('cgu', '0.1')`);
+    const maj = await enTantQue(db, alice, `update consentements set version = '9.9'`);
+    const sup = await enTantQue(db, alice, 'delete from consentements');
+    assert.equal(maj.affectedRows, 0);
+    assert.equal(sup.affectedRows, 0);
+    const { rows } = await enTantQue(db, alice, 'select document, version from consentements');
+    assert.deepEqual(rows, [{ document: 'cgu', version: '0.1' }]);
+  });
+});
+
+describe('données de référence', () => {
+  test('les formules sont lisibles mais pas modifiables', async () => {
+    const { rows } = await enTantQue(db, alice, 'select code, max_biens from formules order by ordre');
+    assert.deepEqual(rows, [
+      { code: 'decouverte', max_biens: 1 },
+      { code: 'essentiel', max_biens: 3 },
+      { code: 'gestion', max_biens: 10 },
+      { code: 'patrimoine', max_biens: null },
+    ]);
+    const r = await enTantQue(db, alice, `update formules set max_biens = 99`);
+    assert.equal(r.affectedRows, 0);
+  });
+
+  test('la liste des communes en zone tendue n’est pas modifiable depuis l’application', async () => {
+    await assert.rejects(
+      enTantQue(
+        db,
+        alice,
+        `insert into communes_zone_tendue (code_insee, commune, source, date_entree_vigueur) values ('83137', 'Toulon', 'x', '2027-01-01')`,
+      ),
+      /row-level security/,
+    );
+  });
+});
+
+describe('coffre (stockage des fichiers)', () => {
+  test('Alice range un fichier dans son dossier, Bruno ne le voit pas', async () => {
+    await enTantQue(db, alice, `insert into storage.objects (bucket_id, name) values ('coffre', $1)`, [
+      `${alice}/dpe.pdf`,
+    ]);
+    const vu = await enTantQue(db, bruno, 'select name from storage.objects');
+    assert.equal(vu.rows.length, 0);
+    const sup = await enTantQue(db, bruno, 'delete from storage.objects');
+    assert.equal(sup.affectedRows, 0);
+  });
+
+  test('Bruno ne peut pas déposer un fichier dans le dossier d’Alice', async () => {
+    await assert.rejects(
+      enTantQue(db, bruno, `insert into storage.objects (bucket_id, name) values ('coffre', $1)`, [
+        `${alice}/faux.pdf`,
+      ]),
+      /row-level security/,
+    );
+  });
+});
+
+describe('suppression du compte', () => {
+  test('efface toutes les données du bailleur, et seulement les siennes', async () => {
+    await ajouterBien(alice);
+    await ajouterBien(bruno);
+    await enAdmin(db, 'delete from auth.users where id = $1', [alice]);
+    const { rows } = await enAdmin(
+      db,
+      `select (select count(*) from biens where proprietaire_id = $1)::int as biens_alice,
+              (select count(*) from entites where proprietaire_id = $1)::int as entites_alice,
+              (select count(*) from profils where id = $1)::int as profil_alice,
+              (select count(*) from biens where proprietaire_id = $2)::int as biens_bruno`,
+      [alice, bruno],
+    );
+    assert.deepEqual(rows[0], { biens_alice: 0, entites_alice: 0, profil_alice: 0, biens_bruno: 1 });
+  });
+});
