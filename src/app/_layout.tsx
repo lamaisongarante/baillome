@@ -72,7 +72,8 @@ function Navigation() {
         <Stack.Screen name="compte" />
         <Stack.Screen name="formules" />
         <Stack.Screen name="bien/nouveau" />
-        <Stack.Screen name="bien/[id]" />
+        <Stack.Screen name="bien/[id]/index" />
+        <Stack.Screen name="bien/[id]/[rubrique]" />
         <Stack.Screen name="parcours/scan-bail" options={{ gestureEnabled: false }} />
         <Stack.Screen name="parcours/check-up" options={{ gestureEnabled: false }} />
       </Stack.Protected>

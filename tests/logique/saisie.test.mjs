@@ -7,6 +7,8 @@ import {
   lireDateFrancaise,
   lireEntier,
   lireNombre,
+  versDateFrancaise,
+  versTexteNombre,
 } from '../../src/lib/saisie.ts';
 
 test('date française valide', () => {
@@ -46,4 +48,11 @@ test('nombres saisis à la française', () => {
   assert.equal(lireNombre(''), null);
   assert.equal(lireEntier('2'), 2);
   assert.equal(lireEntier('2,5'), null);
+});
+
+test('réaffichage à la française', () => {
+  assert.equal(versDateFrancaise('2022-03-14'), '14/03/2022');
+  assert.equal(versDateFrancaise(null), '');
+  assert.equal(versTexteNombre(48.5), '48,5');
+  assert.equal(versTexteNombre(null), '');
 });

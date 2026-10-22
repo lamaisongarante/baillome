@@ -39,3 +39,15 @@ export function lireEntier(texte: string): number | null {
   if (!/^\d+$/.test(t)) return null;
   return Number(t);
 }
+
+/** « 2022-03-14 » → « 14/03/2022 » (pour réafficher une date enregistrée). */
+export function versDateFrancaise(iso: string | null): string {
+  if (!iso) return '';
+  const [a, m, j] = iso.slice(0, 10).split('-');
+  return `${j}/${m}/${a}`;
+}
+
+/** Nombre affiché à la française : 48.5 → « 48,5 ». */
+export function versTexteNombre(n: number | null): string {
+  return n === null || n === undefined ? '' : String(n).replace('.', ',');
+}
