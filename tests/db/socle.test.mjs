@@ -224,6 +224,18 @@ describe('données de référence', () => {
     assert.equal(r.affectedRows, 0);
   });
 
+  test('mobilier obligatoire : les 11 éléments du décret n° 2015-981, dans l’ordre', async () => {
+    const { rows } = await enTantQue(db, alice, 'select ordre, libelle, source from elements_mobilier_obligatoires order by ordre');
+    assert.equal(rows.length, 11);
+    assert.equal(rows[0].libelle, 'Literie comprenant couette ou couverture');
+    assert.equal(
+      rows[4].libelle,
+      'Réfrigérateur et congélateur ou, au minimum, un réfrigérateur doté d’un compartiment permettant de disposer d’une température inférieure ou égale à - 6 °C'.replaceAll('’', "'"),
+    );
+    assert.equal(rows[10].libelle, "Matériel d'entretien ménager adapté aux caractéristiques du logement");
+    assert.ok(rows.every((r, i) => r.ordre === i + 1 && r.source.startsWith('Décret n° 2015-981')));
+  });
+
   test('la liste des communes en zone tendue n’est pas modifiable depuis l’application', async () => {
     await assert.rejects(
       enTantQue(
