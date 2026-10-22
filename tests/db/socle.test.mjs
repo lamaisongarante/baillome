@@ -300,6 +300,44 @@ describe('coffre (stockage des fichiers)', () => {
   });
 });
 
+describe('suppression du compte par le bailleur lui-même', () => {
+  test('Alice supprime son compte : tout est effacé, Bruno n’est pas touché', async () => {
+    await ajouterBien(alice);
+    await ajouterBien(bruno);
+    await enTantQue(db, alice, 'select public.supprimer_mon_compte()');
+    const { rows } = await enAdmin(
+      db,
+      `select (select count(*) from auth.users where id = $1)::int as compte_alice,
+              (select count(*) from biens where proprietaire_id = $1)::int as biens_alice,
+              (select count(*) from auth.users where id = $2)::int as compte_bruno,
+              (select count(*) from biens where proprietaire_id = $2)::int as biens_bruno`,
+      [alice, bruno],
+    );
+    assert.deepEqual(rows[0], { compte_alice: 0, biens_alice: 0, compte_bruno: 1, biens_bruno: 1 });
+  });
+
+  test('un visiteur non connecté ne peut pas l’appeler', async () => {
+    await enAdmin(db, 'reset role');
+    await db.query('set role anon');
+    await assert.rejects(db.query('select public.supprimer_mon_compte()'), /permission denied/);
+    await db.query('reset role');
+  });
+});
+
+describe('entités : suppression', () => {
+  test('une SCI sans bien peut être supprimée', async () => {
+    const { rows } = await enTantQue(db, alice, `insert into entites (type, nom) values ('sci', 'SCI Test') returning id`);
+    const r = await enTantQue(db, alice, 'delete from entites where id = $1', [rows[0].id]);
+    assert.equal(r.affectedRows, 1);
+  });
+
+  test('une SCI qui détient un bien ne peut pas être supprimée', async () => {
+    const { rows } = await enTantQue(db, alice, `insert into entites (type, nom) values ('sci', 'SCI Test') returning id`);
+    await ajouterBien(alice, { entite_id: rows[0].id });
+    await assert.rejects(enTantQue(db, alice, 'delete from entites where id = $1', [rows[0].id]), /foreign key/);
+  });
+});
+
 describe('suppression du compte', () => {
   test('efface toutes les données du bailleur, et seulement les siennes', async () => {
     await ajouterBien(alice);

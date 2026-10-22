@@ -42,7 +42,8 @@
           "photosPermission": "Baillome accède à vos photos pour ranger vos documents dans le coffre.",
           "cameraPermission": "Baillome utilise l’appareil photo pour scanner vos documents."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
