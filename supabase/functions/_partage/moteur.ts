@@ -173,6 +173,14 @@ function evaluerR01(c: Contexte, r: RegleData): Evaluation {
   } else if (b.dpe_classe === 'F') constats.push({ situation: 'classe_f' });
   else if (b.dpe_classe === 'E') constats.push({ situation: 'classe_e' });
 
+  // Horizon : date à laquelle la classe actuelle ne suffira plus (paramètres datés).
+  const prochaine = param<{ classe: string; depuis: string }[]>(r, 'classes_non_decentes').find(
+    (x) => x.classe === b.dpe_classe && x.depuis > c.aujourdhui,
+  );
+  if (prochaine) {
+    echeances.push({ date: prochaine.depuis, cle: 'classe_insuffisante', libelle: `La classe ${prochaine.classe} ne suffira plus pour louer` });
+  }
+
   if (['E', 'F', 'G'].includes(b.dpe_classe)) {
     if (!b.chauffage_energie) return { statut: 'a_completer', questions: ['chauffage_energie'], constats, echeances };
     if (b.chauffage_energie === 'electrique' && b.dpe_date >= elec.dpe_du && b.dpe_date <= elec.dpe_au) {

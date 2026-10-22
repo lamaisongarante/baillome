@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,6 +10,7 @@ import { couleurs, polices } from '@/theme/tokens';
  * du développement (décision du 22/10/2026) : pour l'instant, on la passe.
  */
 export default function ScanBail() {
+  const { bien } = useLocalSearchParams<{ bien?: string }>();
   return (
     <SafeAreaView style={styles.page} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.contenu}>
@@ -22,7 +23,7 @@ export default function ScanBail() {
           </Text>
         </View>
         <View style={styles.espace} />
-        <BoutonPrincipal libelle="Passer cette étape" onPress={() => router.replace('/parcours/check-up')} />
+        <BoutonPrincipal libelle="Passer cette étape" onPress={() => router.replace({ pathname: '/parcours/check-up', params: bien ? { bien } : {} })} />
       </ScrollView>
     </SafeAreaView>
   );

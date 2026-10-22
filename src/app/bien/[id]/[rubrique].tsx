@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   RubriqueAssurances,
+  RubriqueDiagnostics,
   RubriqueEnergie,
   RubriqueEquipements,
   RubriqueIdentite,
@@ -19,6 +20,7 @@ const RUBRIQUES = {
   surfaces: { titre: 'Surfaces et pièces', Composant: RubriqueSurfaces },
   energie: { titre: 'Énergie', Composant: RubriqueEnergie },
   equipements: { titre: 'Équipements', Composant: RubriqueEquipements },
+  diagnostics: { titre: 'Diagnostics', Composant: RubriqueDiagnostics },
   assurances: { titre: 'Assurances', Composant: RubriqueAssurances },
   notes: { titre: 'Notes', Composant: RubriqueNotes },
 } as const;

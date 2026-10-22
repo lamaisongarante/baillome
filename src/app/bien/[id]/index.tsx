@@ -93,15 +93,15 @@ export default function FicheBien() {
           <CarteRubrique key={e.code} etat={e} onPress={() => ouvrir(e.code)} />
         ))}
 
-        <View style={[styles.carte, styles.carteAttente]}>
+        <Pressable onPress={() => ouvrir('diagnostics')} style={({ pressed }) => [styles.carte, pressed && styles.appuye]} accessibilityRole="button">
           <View style={styles.texteCarte}>
             <Text style={styles.titreCarte}>Diagnostics</Text>
-            <Text style={styles.detail}>La liste de vos diagnostics arrive avec le check-up.</Text>
+            <Text style={styles.detail}>Électricité, gaz, plomb, amiante, état des risques</Text>
           </View>
           <View style={styles.pastilleNeutre}>
-            <Text style={styles.pastilleTexte}>BIENTÔT</Text>
+            <Text style={styles.pastilleTexte}>{fiche.diagnostics.length}</Text>
           </View>
-        </View>
+        </Pressable>
 
         <Pressable onPress={() => ouvrir('notes')} style={[styles.carte, styles.carteNotes]} accessibilityRole="button">
           <View style={styles.texteCarte}>
@@ -113,6 +113,16 @@ export default function FicheBien() {
           <View style={styles.pastilleNeutre}>
             <Text style={styles.pastilleTexte}>Libre</Text>
           </View>
+        </Pressable>
+
+        <Pressable onPress={() => router.push(`/checkup/${b.id}`)} style={styles.checkup} accessibilityRole="button">
+          <Text style={styles.checkupTexte}>Faire le check-up de ce bien</Text>
+          <View style={styles.pastilleFleche}>
+            <Icone nom="fleche" couleur={couleurs.pin} taille={14} epaisseur={2.6} />
+          </View>
+        </Pressable>
+        <Pressable onPress={() => router.push(`/checkup/resultat/${b.id}`)} style={styles.lienResultat} accessibilityRole="button">
+          <Text style={styles.lienResultatTexte}>Voir le dernier résultat</Text>
         </Pressable>
 
         <View style={styles.scan}>
@@ -198,7 +208,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   appuye: { opacity: 0.8 },
-  carteAttente: { opacity: 0.75 },
   carteNotes: { backgroundColor: couleurs.transparent, borderWidth: 1.5, borderStyle: 'dashed', borderColor: couleurs.pointillesFort },
   texteCarte: { flex: 1, gap: 2 },
   titreCarte: { fontFamily: polices.interfaceTresGras, fontSize: 15, color: couleurs.texte },
@@ -225,6 +234,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pastilleTexte: { fontFamily: polices.techniqueGras, fontSize: 10.5, color: couleurs.texteDiscret },
+  checkup: {
+    marginTop: 12,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: couleurs.pin,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  checkupTexte: { fontFamily: polices.interfaceTresGras, fontSize: 15, color: couleurs.surPin },
+  pastilleFleche: { width: 26, height: 26, borderRadius: 13, backgroundColor: couleurs.citron, alignItems: 'center', justifyContent: 'center' },
+  lienResultat: { alignItems: 'center', paddingVertical: 6 },
+  lienResultatTexte: { fontFamily: polices.interfaceTresGras, fontSize: 13.5, color: couleurs.pin, textDecorationLine: 'underline' },
   scan: {
     marginTop: 12,
     height: 54,

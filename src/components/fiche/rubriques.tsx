@@ -354,6 +354,7 @@ export function RubriqueEnergie({ fiche, onEnregistre }: PropsRubrique) {
   const [min, setMin] = useState(b.dpe_depenses_min_euros?.toString() ?? '');
   const [max, setMax] = useState(b.dpe_depenses_max_euros?.toString() ?? '');
   const [annee, setAnnee] = useState(b.dpe_annee_reference_prix?.toString() ?? '');
+  const [energie, setEnergie] = useState(b.chauffage_energie);
 
   function valider() {
     const iso = lireDateFacultative(date, setErreur, 'La date du DPE');
@@ -373,6 +374,7 @@ export function RubriqueEnergie({ fiche, onEnregistre }: PropsRubrique) {
       dpe_depenses_min_euros: dMin,
       dpe_depenses_max_euros: dMax,
       dpe_annee_reference_prix: an,
+      chauffage_energie: energie,
     });
   }
 
@@ -411,6 +413,22 @@ export function RubriqueEnergie({ fiche, onEnregistre }: PropsRubrique) {
           </View>
         </View>
         <Text style={styles.texte}>Montants indiqués sur votre DPE.</Text>
+      </View>
+      <View style={styles.bloc}>
+        <Libelle>Mode de chauffage principal</Libelle>
+        <PilulesChoix
+          libelleGroupe="Mode de chauffage principal"
+          valeur={energie}
+          onChange={setEnergie}
+          options={[
+            { valeur: 'electrique', libelle: 'Électrique' },
+            { valeur: 'gaz', libelle: 'Gaz' },
+            { valeur: 'fioul', libelle: 'Fioul' },
+            { valeur: 'bois', libelle: 'Bois' },
+            { valeur: 'reseau', libelle: 'Réseau' },
+            { valeur: 'autre', libelle: 'Autre' },
+          ]}
+        />
       </View>
       <MessageErreur message={erreur} />
       <Confirmation visible={ok} />
@@ -613,6 +631,103 @@ export function RubriqueAssurances({ fiche, onEnregistre }: PropsRubrique) {
       <MessageErreur message={erreur} />
       <Confirmation visible={ok} />
       <BoutonPrincipal libelle="Enregistrer" onPress={enregistrer} occupe={occupe} />
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Diagnostics (R-04 ; le DPE se renseigne dans « Énergie »)
+// ---------------------------------------------------------------------
+
+export const TYPES_DIAGNOSTIC = [
+  { valeur: 'crep', libelle: 'Constat de risque d’exposition au plomb (CREP)' },
+  { valeur: 'electricite', libelle: 'État de l’installation intérieure d’électricité' },
+  { valeur: 'gaz', libelle: 'État de l’installation intérieure de gaz' },
+  { valeur: 'erp', libelle: 'État des risques et pollutions' },
+  { valeur: 'bruit', libelle: 'État des nuisances sonores aériennes' },
+  { valeur: 'amiante', libelle: 'Dossier amiante des parties privatives' },
+];
+
+export function RubriqueDiagnostics({ fiche, onEnregistre }: PropsRubrique) {
+  const [type, setType] = useState<string | null>(null);
+  const [date, setDate] = useState('');
+  const [resultat, setResultat] = useState<string | null>(null);
+  const [occupe, setOccupe] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  async function ajouter() {
+    setErreur(null);
+    if (!type) return setErreur('Choisissez le diagnostic.');
+    const iso = lireDateFacultative(date, setErreur, 'La date de réalisation');
+    if (iso === undefined) return;
+    if (!iso) return setErreur('Indiquez la date de réalisation, au format JJ/MM/AAAA.');
+    if (type === 'crep' && !resultat) return setErreur('Indiquez le résultat du constat plomb.');
+    setOccupe(true);
+    const { error } = await supabase.from('diagnostics').insert({
+      bien_id: fiche.bien.id,
+      type,
+      date_realisation: iso,
+      resultat: type === 'crep' ? resultat : null,
+    });
+    setOccupe(false);
+    if (error) return setErreur(ERREUR_RESEAU);
+    setType(null);
+    setDate('');
+    setResultat(null);
+    await onEnregistre();
+  }
+
+  async function retirer(id: string) {
+    await supabase.from('diagnostics').delete().eq('id', id);
+    await onEnregistre();
+  }
+
+  return (
+    <View style={styles.rubrique}>
+      <Text style={styles.texte}>
+        Indiquez chaque diagnostic dont vous disposez. Le DPE se renseigne dans la rubrique « Énergie », et les fichiers se rangent dans le coffre.
+      </Text>
+      {fiche.diagnostics.map((d) => (
+        <View key={d.id} style={styles.ligneListe}>
+          <View style={styles.colonne}>
+            <Text style={styles.ligneTexte}>{TYPES_DIAGNOSTIC.find((t) => t.valeur === d.type)?.libelle ?? d.type}</Text>
+            <Text style={styles.texte}>
+              Réalisé le {versDateFrancaise(d.date_realisation)}
+              {d.resultat ? ` · ${d.resultat === 'presence' ? 'présence de plomb' : 'absence de plomb'}` : ''}
+            </Text>
+          </View>
+          <Pressable onPress={() => retirer(d.id)} accessibilityRole="button" accessibilityLabel="Retirer ce diagnostic">
+            <Text style={styles.lien}>Retirer</Text>
+          </Pressable>
+        </View>
+      ))}
+
+      <Text style={[styles.sousTitre, styles.separation]}>Ajouter un diagnostic</Text>
+      <PilulesChoix libelleGroupe="Diagnostic" valeur={type} onChange={setType} options={TYPES_DIAGNOSTIC} />
+      <Champ
+        libelle="Date de réalisation"
+        value={date}
+        onChangeText={(t) => setDate(formaterDateEnCours(t))}
+        keyboardType="number-pad"
+        placeholder="JJ/MM/AAAA"
+        maxLength={10}
+      />
+      {type === 'crep' ? (
+        <View style={styles.bloc}>
+          <Libelle>Résultat</Libelle>
+          <PilulesChoix
+            libelleGroupe="Résultat du constat plomb"
+            valeur={resultat}
+            onChange={setResultat}
+            options={[
+              { valeur: 'absence', libelle: 'Absence de plomb' },
+              { valeur: 'presence', libelle: 'Présence de plomb' },
+            ]}
+          />
+        </View>
+      ) : null}
+      <MessageErreur message={erreur} />
+      <BoutonPrincipal libelle="Ajouter ce diagnostic" onPress={ajouter} occupe={occupe} />
     </View>
   );
 }

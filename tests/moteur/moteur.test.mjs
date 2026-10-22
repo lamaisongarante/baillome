@@ -139,6 +139,13 @@ describe('R-01 · DPE (règle validée)', () => {
     );
   });
 
+  test('horizon : classe F → « La classe F ne suffira plus pour louer » au 01/01/2028 ; classe E → 01/01/2034', () => {
+    const f = ev({ bien: { dpe_classe: 'F' } }).echeances.find((e) => e.cle === 'classe_insuffisante');
+    assert.deepEqual([f.date, f.libelle], ['2028-01-01', 'La classe F ne suffira plus pour louer']);
+    assert.equal(ev({ bien: { dpe_classe: 'E' } }).echeances.find((e) => e.cle === 'classe_insuffisante').date, '2034-01-01');
+    assert.equal(ev({ bien: { dpe_classe: 'C' } }).echeances.find((e) => e.cle === 'classe_insuffisante'), undefined);
+  });
+
   test('après le 31/12/2027, la version de R-01 doit être revue (messages F et E datés)', () => {
     const r = evaluer(contexte({ aujourdhui: '2028-01-02' }), CRITERES_DECENCE);
     assert.equal(r.etats.find((e) => e.regle === 'R-01').statut, 'version_a_revoir');

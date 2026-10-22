@@ -108,7 +108,7 @@ export default function NouveauBien() {
       return setErreur('L’enregistrement n’a pas abouti. Vérifiez votre connexion et réessayez.');
     }
 
-    if (dansLeParcours) router.replace('/parcours/scan-bail');
+    if (dansLeParcours) router.replace({ pathname: '/parcours/scan-bail', params: { bien: bien.id } });
     else router.replace({ pathname: '/bien/[id]', params: { id: bien.id } });
   }
 

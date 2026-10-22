@@ -18,6 +18,7 @@ export type Bien = BienPourCompletude & {
   dpe_numero: string | null;
   dpe_annee_reference_prix: number | null;
   chauffage_repartition: string | null;
+  chauffage_energie: string | null;
   notes: string | null;
 };
 
@@ -34,6 +35,7 @@ export type Assurance = {
   date_fin_validite: string | null;
 };
 export type Entite = { id: string; type: string; nom: string };
+export type Diagnostic = { id: string; type: string; date_realisation: string | null; resultat: string | null };
 
 export type Fiche = {
   bien: Bien;
@@ -42,11 +44,12 @@ export type Fiche = {
   elementsObligatoires: ElementMobilier[];
   assurances: Assurance[];
   entites: Entite[];
+  diagnostics: Diagnostic[];
 };
 
 /** Charge tout ce qui compose la fiche d'un bien. */
 export async function chargerFiche(id: string): Promise<Fiche | null> {
-  const [bien, locaux, inventaire, elements, assurances, entites] = await Promise.all([
+  const [bien, locaux, inventaire, elements, assurances, entites, diagnostics] = await Promise.all([
     supabase.from('biens').select('*').eq('id', id).single(),
     supabase.from('locaux_accessoires').select('id, type, numero_lot, description').eq('bien_id', id),
     supabase.from('inventaire_mobilier').select('id, element_code, libelle, quantite').eq('bien_id', id),
@@ -56,6 +59,7 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
       .select('id, nature, assureur, numero_police, date_echeance, annee, date_fin_validite')
       .eq('bien_id', id),
     supabase.from('entites').select('id, type, nom').order('cree_le'),
+    supabase.from('diagnostics').select('id, type, date_realisation, resultat').eq('bien_id', id).order('date_realisation', { ascending: false }),
   ]);
   if (bien.error || !bien.data) return null;
   return {
@@ -65,6 +69,7 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
     elementsObligatoires: elements.data ?? [],
     assurances: (assurances.data ?? []) as Assurance[],
     entites: entites.data ?? [],
+    diagnostics: diagnostics.data ?? [],
   };
 }
 
