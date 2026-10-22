@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 export { messageAffiche } from '@/lib/message';
 
-export type ConstatAffiche = Constat & { libelle: string; message: string; action: string };
+export type ConstatAffiche = Constat & { libelle: string; titre: string | null; message: string; action: string };
 
 export type ResultatBien = {
   bien_id: string;

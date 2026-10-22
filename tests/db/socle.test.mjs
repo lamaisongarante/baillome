@@ -361,6 +361,11 @@ describe('moteur de conformité : données et sécurité', () => {
     assert.equal(msg.affectedRows, 0);
   });
 
+  test('chaque situation a son titre court (formulations du 22/10/2026)', async () => {
+    const { rows } = await enTantQue(db, alice, 'select regle_code, code from regles_situations where titre is null');
+    assert.deepEqual(rows, []);
+  });
+
   test('R-01 à R-04 validées, R-05 à R-12 et le score non validés', async () => {
     const { rows } = await enTantQue(db, alice, 'select code from regles where validee order by code');
     assert.deepEqual(rows.map((r) => r.code), ['R-01', 'R-02', 'R-03', 'R-04']);

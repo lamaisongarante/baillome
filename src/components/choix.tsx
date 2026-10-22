@@ -4,6 +4,18 @@ import { couleurs, couleursDpe, polices, type ClasseDpe } from '@/theme/tokens';
 
 type Option<T extends string> = { valeur: T; libelle: string };
 
+/**
+ * Largeur des pilules selon le texte le plus long : trois par ligne pour les
+ * textes courts, deux pour les moyens, une seule pour les longs. Le texte
+ * n'est jamais coupé : la pilule s'agrandit en hauteur si besoin.
+ */
+function largeur(options: { libelle: string }[]) {
+  const plusLong = Math.max(...options.map((o) => o.libelle.length));
+  if (plusLong > 22) return { flexBasis: '100%' as const };
+  if (plusLong > 11) return { flexBasis: '45%' as const };
+  return { flexBasis: '30%' as const };
+}
+
 /** Grille de gros boutons (type de bien, maquette 14). Le choix actif passe en citron. */
 export function GrilleChoix<T extends string>({
   options,
@@ -57,7 +69,7 @@ export function PilulesChoix<T extends string>({
             onPress={() => onChange(o.valeur)}
             accessibilityRole="radio"
             accessibilityState={{ checked: actif }}
-            style={[styles.pilule, actif && styles.piluleActive]}>
+            style={[styles.pilule, largeur(options), actif && styles.piluleActive]}>
             <Text style={[styles.piluleTexte, actif && styles.piluleTexteActif]}>{o.libelle}</Text>
           </Pressable>
         );
@@ -88,7 +100,7 @@ export function PilulesMultiples<T extends string>({
             onPress={() => onChange(actif ? valeurs.filter((v) => v !== o.valeur) : [...valeurs, o.valeur])}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: actif }}
-            style={[styles.pilule, actif && styles.piluleActive]}>
+            style={[styles.pilule, largeur(options), actif && styles.piluleActive]}>
             <Text style={[styles.piluleTexte, actif && styles.piluleTexteActif]}>{o.libelle}</Text>
           </Pressable>
         );
@@ -150,17 +162,17 @@ const styles = StyleSheet.create({
   pilules: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   pilule: {
     flexGrow: 1,
-    flexBasis: '30%',
-    height: 42,
+    minHeight: 42,
+    paddingVertical: 9,
     borderRadius: 21,
     borderWidth: 1.5,
     borderColor: couleurs.bordureChoix,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 6,
+    paddingHorizontal: 14,
   },
   piluleActive: { backgroundColor: couleurs.pin, borderColor: couleurs.pin },
-  piluleTexte: { fontFamily: polices.interfaceGras, fontSize: 13.5, color: couleurs.pin },
+  piluleTexte: { fontFamily: polices.interfaceGras, fontSize: 13.5, lineHeight: 18, textAlign: 'center', color: couleurs.pin },
   piluleTexteActif: { fontFamily: polices.interfaceTresGras, color: couleurs.surPin },
   dpe: { flexDirection: 'row', gap: 6 },
   classe: { flex: 1, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

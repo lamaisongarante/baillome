@@ -19,6 +19,7 @@ export type Bien = BienPourCompletude & {
   dpe_annee_reference_prix: number | null;
   chauffage_repartition: string | null;
   chauffage_energie: string | null;
+  surface_piece_principale: number | null;
   notes: string | null;
 };
 
@@ -63,7 +64,7 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
   ]);
   if (bien.error || !bien.data) return null;
   return {
-    bien: { ...bien.data, surface_habitable: nombre(bien.data.surface_habitable), hauteur_sous_plafond: nombre(bien.data.hauteur_sous_plafond) } as Bien,
+    bien: { ...bien.data, surface_habitable: nombre(bien.data.surface_habitable), hauteur_sous_plafond: nombre(bien.data.hauteur_sous_plafond), surface_piece_principale: nombre(bien.data.surface_piece_principale) } as Bien,
     locaux: locaux.data ?? [],
     inventaire: inventaire.data ?? [],
     elementsObligatoires: elements.data ?? [],

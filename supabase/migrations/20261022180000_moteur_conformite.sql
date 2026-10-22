@@ -39,6 +39,7 @@ create table public.regles_situations (
   regle_code text not null references public.regles (code),
   code text not null,
   libelle text not null, -- intitulé de la situation dans la fiche
+  titre text, -- titre court affiché sur la carte de résultat (formulations du 22/10/2026)
   gravite text not null check (gravite in ('critique', 'important', 'conseil', 'ok')),
   message text not null,
   action text not null,
@@ -64,6 +65,10 @@ alter table public.profils add column apercu_regles boolean not null default fal
 alter table public.biens add column chauffage_energie text
   check (chauffage_energie in ('electrique', 'gaz', 'fioul', 'bois', 'reseau', 'autre'));
 grant update (chauffage_energie) on public.biens to authenticated;
+-- Surface de la plus grande pièce principale (R-12, décence : art. 4 du décret n° 2002-120).
+alter table public.biens add column surface_piece_principale numeric(6, 2)
+  check (surface_piece_principale is null or surface_piece_principale > 0);
+grant update (surface_piece_principale) on public.biens to authenticated;
 alter table public.diagnostics add column resultat text check (resultat in ('presence', 'absence'));
 
 alter table public.regles enable row level security;
@@ -137,8 +142,8 @@ insert into public.regles_versions (regle_code, version, date_effet, valable_jus
    $s$Fiche R-08 (messages à valider).$s$),
   ('R-12', '2026-10-22', '2025-01-01', null, $j${"piece_surface_min_m2": 9, "piece_hauteur_min_m": 2.2, "piece_volume_min_m3": 20}$j$,
    $s$Décret n° 2002-120, art. 4 (fiche R-12, compléments du 22/10/2026).$s$),
-  ('SCORE', '2026-10-22', '2025-01-01', null, $j${"depart": 100, "critique": 25, "important": 12, "conseil": 0, "minimum": 0}$j$,
-   $s$Proposition à valider : 100, moins 25 par situation Critique, moins 12 par situation Important ; minimum 0.$s$);
+  ('SCORE', '2026-10-22', '2025-01-01', null, $j${"depart": 100, "critique": 25, "important": 12, "conseil": 0, "minimum": 0, "une_deduction_par_regle": true}$j$,
+   $s$Proposition à valider : 100, moins 25 (Critique) ou 12 (Important) par règle, en ne retenant que la situation la plus grave de chaque règle ; minimum 0 (correction du 22/10/2026).$s$);
 
 -- =====================================================================
 -- Situations, messages et actions (mot pour mot)
@@ -236,3 +241,38 @@ insert into public.regles_situations (regle_code, code, libelle, gravite, messag
   ('R-12', 'contraintes_travaux', $x$Contraintes techniques ou patrimoniales empêchant les travaux énergétiques (art. 3 ter)$x$, 'conseil',
    $x$Si des contraintes techniques ou patrimoniales empêchent les travaux, le juge ne peut pas les ordonner. Conservez les justificatifs (attestation d'un professionnel, refus d'autorisation).$x$,
    $x$Ranger les justificatifs au coffre.$x$);
+
+-- =====================================================================
+-- Titres courts des cartes de résultat (docs/formulations-check-up.md, § 3)
+-- =====================================================================
+update public.regles_situations s set titre = t.titre
+from (values
+  ('R-01', 'dpe_absent_ou_ancien', $x$Votre DPE n'est plus valable$x$),
+  ('R-01', 'dpe_plus_10_ans', $x$Votre DPE est périmé$x$),
+  ('R-01', 'classe_g', $x$Classe G : location interdite$x$),
+  ('R-01', 'classe_g_locataire', $x$Votre locataire peut exiger des travaux$x$),
+  ('R-01', 'classe_f', $x$Classe F : votre loyer est figé$x$),
+  ('R-01', 'classe_e', $x$Classe E : tranquille jusqu'en 2034$x$),
+  ('R-01', 'attestation_electricite', $x$Votre étiquette peut s'améliorer gratuitement$x$),
+  ('R-04', 'crep_absent', $x$Constat plomb à faire$x$),
+  ('R-04', 'crep_positif_perime', $x$Constat plomb à refaire$x$),
+  ('R-04', 'securite_absent', $x$Diagnostic de sécurité à faire$x$),
+  ('R-04', 'securite_perime', $x$Diagnostic de sécurité à refaire$x$),
+  ('R-04', 'erp_plus_6_mois', $x$État des risques à renouveler$x$),
+  ('R-04', 'erp_absent', $x$État des risques manquant$x$),
+  ('R-04', 'bruit', $x$Information bruit à joindre$x$),
+  ('R-04', 'amiante', $x$Dossier amiante à préparer$x$),
+  ('R-04', 'tous_valables', $x$Diagnostics à jour$x$),
+  ('R-05', 'identifiant_fiscal', $x$Identifiant fiscal manquant$x$),
+  ('R-08', 'attestation_absente', $x$Attestation d'assurance à demander$x$),
+  ('R-08', 'attestation_perimee', $x$Assurance du locataire à vérifier$x$),
+  ('R-08', 'pno_copropriete', $x$Assurance propriétaire obligatoire$x$),
+  ('R-08', 'pno_hors_copropriete', $x$Assurance propriétaire conseillée$x$),
+  ('R-09', 'zone_tendue_relocation', $x$Zone tendue : loyer encadré à la relocation$x$),
+  ('R-11', 'element_manquant', $x$Meublé incomplet$x$),
+  ('R-11', 'inventaire_complet', $x$Meublé bien équipé$x$),
+  ('R-12', 'surface', $x$Surface trop petite pour louer$x$),
+  ('R-12', 'arrete', $x$Logement sous arrêté$x$),
+  ('R-12', 'critere', $x$Point de décence à améliorer$x$)
+) as t (regle_code, code, titre)
+where s.regle_code = t.regle_code and s.code = t.code;

@@ -27,6 +27,7 @@ export type BienCheckup = {
   regime_juridique: string | null;
   periode_construction: string | null;
   hauteur_sous_plafond: number | null;
+  surface_piece_principale: number | null;
   dpe_classe: string | null;
   dpe_date: string | null;
   chauffage_energie: string | null;
@@ -318,7 +319,7 @@ function evaluerR11(c: Contexte): Evaluation {
 }
 
 /** R-12 · Décence du logement (la performance énergétique relève de R-01). */
-function evaluerR12(c: Contexte, r: RegleData, criteres: { code: string; critere: string }[]): Evaluation {
+function evaluerR12(c: Contexte, r: RegleData, criteres: { code: string; critere: string; question: string | null }[]): Evaluation {
   const b = c.bien;
   if (!estLogement(b)) return { statut: 'non_applicable' };
   const rep = c.reponses;
@@ -328,9 +329,9 @@ function evaluerR12(c: Contexte, r: RegleData, criteres: { code: string; critere
   const manquantes: string[] = [];
   const constats: Ajout[] = [];
 
-  const surface = rep.piece_principale_surface ? Number(rep.piece_principale_surface) : null;
+  const surface = c.bien.surface_piece_principale;
   const hauteur = b.hauteur_sous_plafond ?? (rep.hauteur_sous_plafond ? Number(rep.hauteur_sous_plafond) : null);
-  if (surface === null) manquantes.push('piece_principale_surface');
+  if (surface === null) manquantes.push('surface_piece_principale');
   if (hauteur === null) manquantes.push('hauteur_sous_plafond');
   if (surface !== null && hauteur !== null && !((surface >= smin && hauteur >= hmin) || surface * hauteur >= vmin)) {
     constats.push({ situation: 'surface' });
@@ -339,7 +340,8 @@ function evaluerR12(c: Contexte, r: RegleData, criteres: { code: string; critere
   if (!rep.arrete) manquantes.push('arrete');
   else if (rep.arrete === 'oui') constats.push({ situation: 'arrete' });
 
-  for (const cr of criteres) {
+  // Seuls les critères posés en question (chauffage, cuisine et sanitaires viennent de la fiche du bien).
+  for (const cr of criteres.filter((x) => x.question)) {
     const v = rep[`decence_${cr.code}`];
     if (!v) manquantes.push(`decence_${cr.code}`);
     else if (v === 'non') constats.push({ situation: 'critere', valeurs: { critère: cr.critere.toLowerCase() } });
@@ -357,7 +359,7 @@ function evaluerR12(c: Contexte, r: RegleData, criteres: { code: string; critere
 /** Règles qui ont besoin du bail, des loyers ou des candidatures (étapes 3 à 5). */
 const NECESSITE_BAIL = ['R-02', 'R-03', 'R-06', 'R-07', 'R-10'];
 
-export function evaluer(c: Contexte, criteresDecence: { code: string; critere: string }[]): Resultat {
+export function evaluer(c: Contexte, criteresDecence: { code: string; critere: string; question: string | null }[]): Resultat {
   if (estOutreMer(c.bien.code_insee)) return { horsV1: true, constats: [], etats: [], score: null, echeances: [] };
 
   const constats: Constat[] = [];
@@ -400,12 +402,21 @@ export function evaluer(c: Contexte, criteresDecence: { code: string; critere: s
   return { horsV1: false, constats, etats, score: calculerScore(c, constats), echeances: echeances.sort((a, b) => a.date.localeCompare(b.date)) };
 }
 
-/** Score d'un bien : 100, moins une pénalité par situation selon sa gravité ; minimum fixé par les paramètres. */
+/**
+ * Score d'un bien : 100, moins une pénalité par règle selon sa situation la plus grave
+ * (correction du 22/10/2026 : une seule déduction par règle) ; minimum fixé par les paramètres.
+ */
 export function calculerScore(c: Pick<Contexte, 'regles' | 'apercu'>, constats: Constat[]): number | null {
   const r = c.regles.find((x) => x.code === 'SCORE');
   if (!r?.version || (!r.validee && !c.apercu)) return null;
-  const p = r.version.parametres as { depart: number; critique: number; important: number; conseil: number; minimum: number };
-  const penalite = constats.reduce((s, k) => s + (k.gravite === 'ok' ? 0 : p[k.gravite]), 0);
+  const p = r.version.parametres as { depart: number; critique: number; important: number; conseil: number; minimum: number; une_deduction_par_regle?: boolean };
+  const valeur = (g: Gravite) => (g === 'ok' ? 0 : p[g]);
+  let penalite: number;
+  if (p.une_deduction_par_regle) {
+    const pire = new Map<string, number>();
+    for (const k of constats) pire.set(k.regle, Math.max(pire.get(k.regle) ?? 0, valeur(k.gravite)));
+    penalite = [...pire.values()].reduce((s, v) => s + v, 0);
+  } else penalite = constats.reduce((s, k) => s + valeur(k.gravite), 0);
   return Math.max(p.minimum, p.depart - penalite);
 }
 

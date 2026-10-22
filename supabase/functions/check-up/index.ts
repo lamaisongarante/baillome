@@ -42,7 +42,7 @@ Deno.serve(async (requete) => {
       .select('regle_code, version, date_effet, valable_jusqu_au, parametres, source')
       .lte('date_effet', jour)
       .order('date_effet', { ascending: false }),
-    supabase.from('regles_situations').select('regle_code, code, libelle, gravite, message, action'),
+    supabase.from('regles_situations').select('regle_code, code, libelle, titre, gravite, message, action'),
     supabase.from('elements_mobilier_obligatoires').select('code, libelle').order('ordre'),
     supabase.from('profils').select('apercu_regles').single(),
   ]);
@@ -57,7 +57,7 @@ Deno.serve(async (requete) => {
 
   let requeteBiens = supabase
     .from('biens')
-    .select('id, numero, type_bien, situation_locative, type_location, code_insee, identifiant_fiscal, type_habitat, regime_juridique, periode_construction, hauteur_sous_plafond, dpe_classe, dpe_date, chauffage_energie')
+    .select('id, numero, type_bien, situation_locative, type_location, code_insee, identifiant_fiscal, type_habitat, regime_juridique, periode_construction, hauteur_sous_plafond, surface_piece_principale, dpe_classe, dpe_date, chauffage_energie')
     .order('numero');
   if (bienId) requeteBiens = requeteBiens.eq('id', bienId);
   const biens = await requeteBiens;
@@ -83,7 +83,11 @@ Deno.serve(async (requete) => {
 
     const contexte: Contexte = {
       aujourdhui: jour,
-      bien: { ...b, hauteur_sous_plafond: b.hauteur_sous_plafond === null ? null : Number(b.hauteur_sous_plafond) },
+      bien: {
+        ...b,
+        hauteur_sous_plafond: b.hauteur_sous_plafond === null ? null : Number(b.hauteur_sous_plafond),
+        surface_piece_principale: b.surface_piece_principale === null ? null : Number(b.surface_piece_principale),
+      },
       reponses: Object.fromEntries((reponses.data ?? []).map((r) => [r.question, r.valeur])),
       diagnostics: diagnostics.data ?? [],
       assurances: assurances.data ?? [],
@@ -99,7 +103,7 @@ Deno.serve(async (requete) => {
     // Les messages et actions sont joints au résultat, tels qu'ils sont en base.
     const constats = r.constats.map((c) => {
       const s = situations.data!.find((x) => x.regle_code === c.regle && x.code === c.situation)!;
-      return { ...c, libelle: s.libelle, message: s.message, action: s.action };
+      return { ...c, libelle: s.libelle, titre: s.titre, message: s.message, action: s.action };
     });
     resultats.push({ bien_id: b.id, numero: b.numero, ...r, constats });
   }

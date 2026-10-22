@@ -241,6 +241,7 @@ export function RubriqueSurfaces({ fiche, onEnregistre }: PropsRubrique) {
   const [surface, setSurface] = useState(versTexteNombre(b.surface_habitable));
   const [pieces, setPieces] = useState(b.pieces_principales?.toString() ?? '');
   const [hauteur, setHauteur] = useState(versTexteNombre(b.hauteur_sous_plafond));
+  const [grandePiece, setGrandePiece] = useState(versTexteNombre(b.surface_piece_principale));
   const [parties, setParties] = useState<string[]>(b.autres_parties);
 
   function choisirParties(v: string[]) {
@@ -257,7 +258,9 @@ export function RubriqueSurfaces({ fiche, onEnregistre }: PropsRubrique) {
     if (pieces.trim() && p === null) return setErreur('Le nombre de pièces doit être un nombre entier.');
     const h = hauteur.trim() ? lireNombre(hauteur) : null;
     if (hauteur.trim() && !h) return setErreur('La hauteur sous plafond doit être un nombre, par exemple 2,50.');
-    enregistrer({ surface_habitable: s, pieces_principales: p, hauteur_sous_plafond: h, autres_parties: parties });
+    const gp = grandePiece.trim() ? lireNombre(grandePiece) : null;
+    if (grandePiece.trim() && !gp) return setErreur('La surface de la plus grande pièce doit être un nombre, par exemple 12,5.');
+    enregistrer({ surface_habitable: s, pieces_principales: p, hauteur_sous_plafond: h, surface_piece_principale: gp, autres_parties: parties });
   }
 
   return (
@@ -273,6 +276,13 @@ export function RubriqueSurfaces({ fiche, onEnregistre }: PropsRubrique) {
           <Champ libelle="Hauteur (m)" value={hauteur} onChangeText={setHauteur} keyboardType="decimal-pad" />
         </View>
       </View>
+      <Champ
+        libelle="Plus grande pièce principale (m²)"
+        value={grandePiece}
+        onChangeText={setGrandePiece}
+        keyboardType="decimal-pad"
+        aide="Sert à vérifier la surface minimale de décence."
+      />
       <View style={styles.bloc}>
         <Libelle>Autres parties du logement</Libelle>
         <PilulesMultiples

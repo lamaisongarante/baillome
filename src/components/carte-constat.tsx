@@ -22,7 +22,7 @@ export function CarteConstat({ constat, rang }: { constat: ConstatAffiche; rang:
         </Text>
         <Text style={[styles.legende, { color: t.texte }]}>{FAMILLES[constat.regle]}</Text>
       </View>
-      <Text style={styles.titre}>{messageAffiche(constat.libelle)}</Text>
+      <Text style={styles.titre}>{messageAffiche(constat.titre ?? constat.libelle)}</Text>
       <Text style={styles.message}>{messageAffiche(constat.message, constat.valeurs)}</Text>
       <View style={styles.action}>
         <Text style={[styles.legende, { color: t.texte }]}>CE QUE VOUS POUVEZ FAIRE</Text>

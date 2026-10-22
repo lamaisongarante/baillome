@@ -23,10 +23,13 @@ export default function QuestionnaireCheckup() {
   const [valeur, setValeur] = useState('');
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [apercu, setApercu] = useState(false);
+  const [loiVisible, setLoiVisible] = useState(false);
 
   /** Interroge le moteur : questions restantes, ou fin du questionnaire (on passe au résultat). */
   const prochainesQuestions = useCallback(async (): Promise<string[] | null> => {
     const r = await lancerCheckup(id);
+    setApercu(r.apercu);
     const b = r.biens[0];
     const q = b && !b.horsV1 ? questionsRestantes(b) : [];
     if (q.length === 0) {
@@ -86,6 +89,7 @@ export default function QuestionnaireCheckup() {
       if (restantes && restantes.length > 1) {
         setRestantes(restantes.slice(1));
         setValeur('');
+        setLoiVisible(false);
       } else await recalculer();
     } catch {
       setErreur('La réponse n’a pas été enregistrée. Vérifiez votre connexion et réessayez.');
@@ -137,6 +141,17 @@ export default function QuestionnaireCheckup() {
               <Text style={styles.titre} accessibilityRole="header">
                 {messageAffiche(q.libelle)}
               </Text>
+              {q.aide ? <Text style={styles.aide}>{messageAffiche(q.aide)}</Text> : null}
+              {q.loi ? (
+                <Pressable onPress={() => setLoiVisible(!loiVisible)} accessibilityRole="button">
+                  <Text style={styles.lienLoi}>Ce que dit la loi {loiVisible ? '↑' : '→'}</Text>
+                </Pressable>
+              ) : null}
+              {q.loi && loiVisible ? (
+                <View style={styles.loi}>
+                  <Text style={styles.loiTexte}>{messageAffiche(q.loi)}</Text>
+                </View>
+              ) : null}
 
               {q.type === 'choix' ? (
                 <View style={styles.choix}>
@@ -193,7 +208,7 @@ export default function QuestionnaireCheckup() {
                 </View>
               ) : null}
 
-              {q.aValider ? <Text style={styles.aValider}>Formulation à valider</Text> : null}
+              {q.aValider && apercu ? <Text style={styles.aValider}>FORMULATION À VALIDER · APERÇU</Text> : null}
               <MessageErreur message={erreur} />
               <View style={styles.espace} />
 
@@ -231,7 +246,11 @@ const styles = StyleSheet.create({
   trait: { flex: 1, height: 6, borderRadius: 3, backgroundColor: couleurs.piste },
   traitFait: { backgroundColor: couleurs.pin },
   traitEnCours: { backgroundColor: couleurs.pointillesFort },
-  titre: { marginTop: 16, fontFamily: polices.titreFort, fontSize: 28, letterSpacing: -1.1, lineHeight: 31, color: couleurs.texte },
+  titre: { marginTop: 16, fontFamily: polices.titreFort, fontSize: 25, letterSpacing: -0.9, lineHeight: 29, color: couleurs.texte },
+  aide: { fontFamily: polices.interface, fontSize: 15, lineHeight: 22, color: couleurs.texteSecondaire },
+  lienLoi: { fontFamily: polices.interfaceTresGras, fontSize: 13.5, color: couleurs.pin },
+  loi: { backgroundColor: couleurs.menthe, borderRadius: 18, padding: 14 },
+  loiTexte: { fontFamily: polices.interface, fontSize: 13.5, lineHeight: 20, color: couleurs.texteInfo },
   choix: { gap: 10, marginTop: 4 },
   option: {
     minHeight: 54,

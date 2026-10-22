@@ -22,10 +22,9 @@ const REPONSES_OK = {
   permis_avant_1997: 'non',
   commune_risques: 'non',
   zone_bruit: 'non',
-  piece_principale_surface: '12',
   arrete: 'non',
   contraintes_travaux: 'non',
-  ...Object.fromEntries(CRITERES_DECENCE.map((c) => [`decence_${c.code}`, 'oui'])),
+  ...Object.fromEntries(CRITERES_DECENCE.filter((c) => c.question).map((c) => [`decence_${c.code}`, 'oui'])),
 };
 
 function contexte({ bien = {}, reponses = {}, apercu = false, aujourdhui = AUJ, ...reste } = {}) {
@@ -42,6 +41,7 @@ function contexte({ bien = {}, reponses = {}, apercu = false, aujourdhui = AUJ, 
       regime_juridique: 'copropriete',
       periode_construction: '1975_1989',
       hauteur_sous_plafond: 2.5,
+      surface_piece_principale: 12,
       dpe_classe: 'C',
       dpe_date: '2022-03-14',
       chauffage_energie: 'gaz',
@@ -287,12 +287,24 @@ describe('R-05, R-08, R-09, R-11, R-12 (en aperçu)', () => {
   });
 
   test('R-12 : pièce de 8 m² × 2,40 m = 19,2 m³ → critique ; 8,5 m² × 2,50 m = 21,25 m³ → décent', () => {
-    assert.deepEqual(situations(ev({ apercu: true, reponses: { piece_principale_surface: '8' }, bien: { hauteur_sous_plafond: 2.4 } }), 'R-12'), ['surface']);
-    assert.deepEqual(situations(ev({ apercu: true, reponses: { piece_principale_surface: '8.5' } }), 'R-12'), []);
+    assert.deepEqual(situations(ev({ apercu: true, bien: { surface_piece_principale: 8, hauteur_sous_plafond: 2.4 } }), 'R-12'), ['surface']);
+    assert.deepEqual(situations(ev({ apercu: true, bien: { surface_piece_principale: 8.5 } }), 'R-12'), []);
   });
 
   test('R-12 : 9 m² mais 2,10 m sous plafond = 18,9 m³ → critique', () => {
-    assert.deepEqual(situations(ev({ apercu: true, reponses: { piece_principale_surface: '9' }, bien: { hauteur_sous_plafond: 2.1 } }), 'R-12'), ['surface']);
+    assert.deepEqual(situations(ev({ apercu: true, bien: { surface_piece_principale: 9, hauteur_sous_plafond: 2.1 } }), 'R-12'), ['surface']);
+  });
+
+  test('R-12 : dix critères posés en question ; chauffage, cuisine et sanitaires viennent de la fiche', () => {
+    const r = ev({ apercu: true, reponses: Object.fromEntries(CRITERES_DECENCE.map((c) => [`decence_${c.code}`, undefined])) });
+    const q = r.etats.find((e) => e.regle === 'R-12').questions;
+    assert.equal(q.length, 10);
+    assert.ok(!q.includes('decence_chauffage') && !q.includes('decence_cuisine') && !q.includes('decence_sanitaires'));
+  });
+
+  test('R-12 : surface de la plus grande pièce manquante → question de la fiche', () => {
+    const r = ev({ apercu: true, bien: { surface_piece_principale: null } });
+    assert.ok(r.etats.find((e) => e.regle === 'R-12').questions.includes('surface_piece_principale'));
   });
 
   test('R-12 : arrêté d\'insalubrité → critique ; critère « aération » non respecté → important', () => {
@@ -313,8 +325,18 @@ describe('score (proposition à valider, en aperçu)', () => {
     assert.equal(r.score, 76);
   });
 
-  test('classe G louée (−50) et état des risques absent (−25) : 25', () => {
-    assert.equal(ev({ apercu: true, bien: { dpe_classe: 'G' }, reponses: { commune_risques: 'oui' } }).score, 25);
+  test('une seule déduction par règle : classe G avec locataire en place → 75, et non 50', () => {
+    const r = ev({ apercu: true, bien: { dpe_classe: 'G' } });
+    assert.equal(r.constats.filter((c) => c.regle === 'R-01').length, 2); // les deux messages restent affichés
+    assert.equal(r.score, 75);
+  });
+
+  test('classe G louée (R-01 : −25) et état des risques absent (R-04 : −25) : 50', () => {
+    assert.equal(ev({ apercu: true, bien: { dpe_classe: 'G' }, reponses: { commune_risques: 'oui' } }).score, 50);
+  });
+
+  test('plusieurs critères de décence non respectés : une seule déduction de 12 pour R-12', () => {
+    assert.equal(ev({ apercu: true, reponses: { decence_aeration: 'non', decence_eclairement: 'non' } }).score, 88);
   });
 
   test('jamais en dessous de 0', () => {
