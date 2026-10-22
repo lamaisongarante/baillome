@@ -9,7 +9,7 @@ import { couleurs, polices } from '@/theme/tokens';
 
 const PASTILLES: Record<Statut, { texte: string; fond: string; couleur: string; contour?: string }> = {
   ok: { texte: 'OK', fond: couleurs.citron, couleur: couleurs.pin },
-  deductible: { texte: 'DÉDUCTIBLE', fond: 'transparent', couleur: couleurs.texteMenthe, contour: couleurs.menthe },
+  deductible: { texte: 'DÉDUCTIBLE', fond: couleurs.transparent, couleur: couleurs.texteMenthe, contour: couleurs.menthe },
   a_renouveler: { texte: 'À RENOUVELER', fond: couleurs.miel, couleur: couleurs.texteMiel },
   expire: { texte: 'EXPIRÉ', fond: couleurs.corail, couleur: couleurs.texteCorail },
 };

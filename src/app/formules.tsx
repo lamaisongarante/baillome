@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     padding: 18,
     gap: 8,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: couleurs.transparent,
   },
   carteConseillee: { borderColor: couleurs.pin, ...ombreUrgente },
   ligne: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },

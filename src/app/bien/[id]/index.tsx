@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   appuye: { opacity: 0.8 },
   carteAttente: { opacity: 0.75 },
-  carteNotes: { backgroundColor: 'transparent', borderWidth: 1.5, borderStyle: 'dashed', borderColor: couleurs.pointillesFort },
+  carteNotes: { backgroundColor: couleurs.transparent, borderWidth: 1.5, borderStyle: 'dashed', borderColor: couleurs.pointillesFort },
   texteCarte: { flex: 1, gap: 2 },
   titreCarte: { fontFamily: polices.interfaceTresGras, fontSize: 15, color: couleurs.texte },
   detail: { fontFamily: polices.interface, fontSize: 12, lineHeight: 16, color: couleurs.texteSecondaire },

@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    boxShadow: '0px 6px 16px rgba(14,59,46,0.25)',
+    boxShadow: `0px 6px 16px ${couleurs.ombre}`,
   },
   appuye: { opacity: 0.85 },
   scannerTexte: { fontFamily: polices.interfaceTresGras, fontSize: 15, color: couleurs.pin },

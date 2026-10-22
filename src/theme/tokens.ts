@@ -42,6 +42,8 @@ export const couleurs = {
   pointilles: '#C5D3CB',
   pointillesFort: '#7FA596',
   bordureChoix: '#9DB3A9', // pilules de choix non sélectionnées
+  transparent: 'transparent',
+  ombre: 'rgba(14,59,46,0.25)', // ombre douce du bouton flottant « Scanner »
 } as const;
 
 /**
@@ -91,6 +93,11 @@ export const espaces = {
   l: 24,
   xl: 32,
 } as const;
+
+/**
+ * Mode sombre : pas en V1 (décision du 22/10/2026). Toutes les couleurs passent
+ * par ce fichier pour qu'un thème sombre puisse s'ajouter sans toucher aux écrans.
+ */
 
 /** Ombre décalée de 5 px : élément urgent (accueil) ou mis en avant (formule conseillée). */
 export const ombreUrgente = {
