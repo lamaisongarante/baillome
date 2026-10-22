@@ -38,7 +38,7 @@ export async function chargerDonneesBail(bailId: string): Promise<{ donnees: Don
       .eq('id', bail.bien_id)
       .single(),
     supabase.from('locaux_accessoires').select('type, numero_lot, description').eq('bien_id', bail.bien_id),
-    supabase.from('profils').select('prenom, nom, adresse, telephone').single(),
+    supabase.from('profils').select('prenom, nom, adresse, telephone, email_dans_baux').single(),
     supabase.from('baux_locataires').select('ordre, personnes (prenom, nom, telephone, email)').eq('bail_id', bailId).order('ordre'),
   ]);
   if (!bien.data || !profil.data) return { impossible: 'Les informations du bien n’ont pas pu être chargées. Vérifiez votre connexion.' };
@@ -62,8 +62,8 @@ export async function chargerDonneesBail(bailId: string): Promise<{ donnees: Don
       qualite: entite.qualite_bailleur === 'personne_morale' ? 'personne_morale' : 'personne_physique',
       sciFamiliale: entite.sci_familiale,
       telephone: p.telephone,
-      // Adresse électronique facultative : non reprise sans choix du bailleur.
-      email: null,
+      // Adresse électronique facultative : seulement si le bailleur l'a choisi (Mon compte).
+      email: p.email_dans_baux ? ((await supabase.auth.getUser()).data.user?.email ?? null) : null,
     },
     locataires: personnes,
     colocation: estColocation(personnes.length, bail.locataires_couple),

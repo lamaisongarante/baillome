@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Champ, MessageErreur, MessageInfo } from '@/components/formulaire';
+import { CaseACocher, Champ, MessageErreur, MessageInfo } from '@/components/formulaire';
 import { afficherTelephone, lireTelephone } from '@/lib/personnes';
 import { Icone } from '@/components/icones';
 import { exporterMesDonnees, supprimerMonCompte } from '@/lib/compte';
@@ -28,6 +28,7 @@ export default function Compte() {
   const [nom, setNom] = useState('');
   const [adresse, setAdresse] = useState('');
   const [telephone, setTelephone] = useState('');
+  const [emailDansBaux, setEmailDansBaux] = useState(false);
   const [formule, setFormule] = useState<string | null>(null);
   const [entites, setEntites] = useState<Entite[]>([]);
   const [message, setMessage] = useState<string | null>(null);
@@ -38,13 +39,14 @@ export default function Compte() {
     useCallback(() => {
       supabase
         .from('profils')
-        .select('prenom, nom, adresse, telephone, formules(libelle)')
+        .select('prenom, nom, adresse, telephone, email_dans_baux, formules(libelle)')
         .single()
         .then(({ data }) => {
           setPrenom(data?.prenom ?? '');
           setNom(data?.nom ?? '');
           setAdresse(data?.adresse ?? '');
           setTelephone(afficherTelephone(data?.telephone ?? null));
+          setEmailDansBaux(!!data?.email_dans_baux);
           setFormule((data?.formules as unknown as { libelle: string } | null)?.libelle ?? null);
         });
       supabase
@@ -63,7 +65,7 @@ export default function Compte() {
     setOccupe('profil');
     const { error } = await supabase
       .from('profils')
-      .update({ prenom: prenom.trim() || null, nom: nom.trim() || null, adresse: adresse.trim() || null, telephone: tel })
+      .update({ prenom: prenom.trim() || null, nom: nom.trim() || null, adresse: adresse.trim() || null, telephone: tel, email_dans_baux: emailDansBaux })
       .eq('id', session?.user.id ?? '');
     setOccupe(null);
     if (error) setErreur('L’enregistrement n’a pas abouti. Vérifiez votre connexion et réessayez.');
@@ -154,6 +156,12 @@ export default function Compte() {
             autoComplete="tel"
             placeholder="06 12 34 56 78"
           />
+          <CaseACocher
+            cochee={emailDansBaux}
+            onChange={setEmailDansBaux}
+            libelleAccessible="Faire figurer mon email dans mes baux">
+            Faire figurer mon email dans mes baux
+          </CaseACocher>
           <Pressable onPress={enregistrerProfil} style={styles.boutonSecondaire} accessibilityRole="button" disabled={occupe !== null}>
             <Text style={styles.boutonSecondaireTexte}>{occupe === 'profil' ? 'Enregistrement…' : 'Enregistrer'}</Text>
           </Pressable>
