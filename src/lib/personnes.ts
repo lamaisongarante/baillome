@@ -70,3 +70,30 @@ export function typeBailPropose(bien: {
 export function estColocation(nombreLocataires: number, couple: boolean): boolean {
   return nombreLocataires > 1 && !couple;
 }
+
+/** Sans accents ni caractères spéciaux : lettres, chiffres et tirets seulement. */
+function pourFichier(texte: string): string {
+  return texte
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^A-Za-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Nom de fichier d'un document du bail : « Bail-HUSSEL-Lea.pdf », colocataires
+ * à la suite (« Bail-HUSSEL-Lea-MARTIN-Tom.pdf »). Nom en majuscules, prénom
+ * avec une majuscule, sans accents ni caractères gênants.
+ */
+export function nomFichierBail(prefixe: string, locataires: { prenom: string | null; nom: string }[]): string {
+  const parties = locataires.flatMap((l) => {
+    const nom = pourFichier(l.nom).toUpperCase();
+    const prenom = l.prenom
+      ? pourFichier(l.prenom)
+          .toLowerCase()
+          .replace(/(^|-)([a-z])/g, (_, s: string, c: string) => s + c.toUpperCase())
+      : '';
+    return [nom, prenom].filter(Boolean);
+  });
+  return `${[prefixe, ...parties].join('-')}.pdf`;
+}

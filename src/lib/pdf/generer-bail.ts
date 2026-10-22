@@ -6,7 +6,7 @@ import { diagnosticsRequis, type BienCheckup, type RegleData } from '@moteur/mot
 import { question } from '@moteur/questions';
 import * as Print from 'expo-print';
 import { File } from 'expo-file-system';
-import { cacheDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
+import { cacheDirectory, copyAsync, deleteAsync, writeAsStringAsync } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { PDFDocument } from 'pdf-lib';
 import { Platform } from 'react-native';
@@ -14,7 +14,7 @@ import { Platform } from 'react-native';
 import { chargerDossierBail } from '@/lib/baux';
 import { lienTemporaire } from '@/lib/coffre';
 import { phraseEquipements } from '@/lib/equipements';
-import { estColocation } from '@/lib/personnes';
+import { estColocation, nomFichierBail } from '@/lib/personnes';
 import { supabase } from '@/lib/supabase';
 
 import { htmlPageDeGarde, type PiecesAnnexes } from './annexes';
@@ -237,8 +237,14 @@ const imprimer = (h: string) =>
     ...(Platform.OS === 'ios' ? { margins: { left: 54, right: 54, top: 54, bottom: 54 } } : {}),
   });
 
-async function partager(uri: string, titre: string) {
-  if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: titre });
+/** Partage le fichier sous son vrai nom (« Bail-HUSSEL-Lea.pdf ») : c'est le nom proposé à l'enregistrement. */
+async function partager(uri: string, nom: string, titre: string) {
+  const cible = `${cacheDirectory}${nom}`;
+  if (uri !== cible) {
+    await deleteAsync(cible, { idempotent: true });
+    await copyAsync({ from: uri, to: cible });
+  }
+  if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(cible, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: titre });
 }
 
 /** « Générer le bail » : le bail seul, un fichier, une fenêtre de partage. */
@@ -253,7 +259,7 @@ export async function genererBail(bailId: string): Promise<string | null> {
     return null;
   }
   const { uri } = await imprimer(htmlBail(r.donnees));
-  await partager(uri, 'Projet de bail');
+  await partager(uri, nomFichierBail('Bail', r.donnees.locataires), 'Projet de bail');
   return null;
 }
 
@@ -307,9 +313,9 @@ export async function genererAnnexes(bailId: string): Promise<string | null> {
   }
   if (notice) await ajouterPdf(await new File((await imprimer(notice)).uri).arrayBuffer());
 
-  const chemin = `${cacheDirectory}annexes-bail-${String(d.bien.numero).padStart(2, '0')}.pdf`;
+  const chemin = `${cacheDirectory}${nomFichierBail('Annexes', d.locataires)}`;
   await writeAsStringAsync(chemin, await fusion.saveAsBase64(), { encoding: 'base64' });
-  await partager(chemin, 'Annexes au contrat de location');
+  await partager(chemin, nomFichierBail('Annexes', d.locataires), 'Annexes au contrat de location');
   return nonJoints.length
     ? `Ces documents du coffre n’ont pas pu être joints (format ou connexion) : ${nonJoints.join(' ; ')}. Rangez-les en PDF, JPEG ou PNG.`
     : null;

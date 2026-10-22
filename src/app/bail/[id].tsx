@@ -22,7 +22,6 @@ import { chargerDossierBail, enregistrerConditions, zoneTendueALaDate, type Cond
 import { chargerEtatSignature, genererAnnexes, genererBail } from '@/lib/pdf/generer-bail';
 import { LIBELLES_TYPE_BAIL, estColocation } from '@/lib/personnes';
 import { formaterDateEnCours, lireDateFrancaise, lireEntier, lireNombre, versDateFrancaise, versTexteNombre } from '@/lib/saisie';
-import { supabase } from '@/lib/supabase';
 import { couleurs, polices } from '@/theme/tokens';
 
 // Champs saisis au clavier : gardés en texte pendant la saisie, convertis à l'enregistrement.
@@ -51,6 +50,7 @@ export default function EcranBail() {
   const [dossier, setDossier] = useState<DossierBail | null | undefined>(undefined);
   const [b, setB] = useState<ConditionsBail | null>(null);
   const [textes, setTextes] = useState<Partial<Record<ChampTexte, string>>>({});
+  // Servitude de résidence principale : donnée de la fiche du bien (rubrique Identité), affichée ici.
   const [servitude, setServitude] = useState(false);
   // Liste officielle des zones tendues applicable à la date de prise d'effet : [date, réponse].
   const [zoneOfficielle, setZoneOfficielle] = useState<[string, boolean | null] | null>(null);
@@ -172,11 +172,8 @@ export default function EcranBail() {
       modele_version: textesOfficiels?.contrat?.version ?? b.modele_version,
       notice_version: textesOfficiels?.notice?.version ?? b.notice_version,
     });
-    const okBien =
-      servitude === dossier.bien.servitude_residence_principale ||
-      !(await supabase.from('biens').update({ servitude_residence_principale: servitude }).eq('id', dossier.bien.id)).error;
     setOccupe(false);
-    if (!ok || !okBien) return setErreur('L’enregistrement n’a pas abouti. Vérifiez votre connexion et réessayez.');
+    if (!ok) return setErreur('L’enregistrement n’a pas abouti. Vérifiez votre connexion et réessayez.');
     setEnregistre(true);
   }
 
@@ -236,15 +233,11 @@ export default function EcranBail() {
 
           {habitation ? (
             <Section numero="II" titre="Destination">
-              <CaseACocher
-                cochee={servitude}
-                onChange={(v) => {
-                  setEnregistre(false);
-                  setServitude(v);
-                }}
-                libelleAccessible="Logement soumis à une servitude de résidence principale">
-                Le logement est soumis à une servitude de résidence principale (code de l’urbanisme, article L. 151-14-1)
-              </CaseACocher>
+              <Text style={styles.aide}>
+                {servitude
+                  ? 'Servitude de résidence principale : oui, d’après la fiche du bien. La mention et sa clause de résiliation figureront au bail.'
+                  : 'Servitude de résidence principale : non, d’après la fiche du bien (rubrique « Identité du bien »).'}
+              </Text>
             </Section>
           ) : null}
 

@@ -20,6 +20,7 @@ export type Bien = BienPourCompletude & {
   chauffage_repartition: string | null;
   eau_chaude_repartition: string | null;
   parties_communes: string | null;
+  servitude_residence_principale: boolean;
   cuisine_equipements: string[];
   salle_eau_equipements: string[];
   wc: 'separe' | 'salle_eau' | null;

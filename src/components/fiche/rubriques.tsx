@@ -105,6 +105,7 @@ export function RubriqueIdentite({ fiche, onEnregistre }: PropsRubrique) {
   const [periode, setPeriode] = useState(b.periode_construction);
   const [entite, setEntite] = useState(b.entite_id);
   const [partiesCommunes, setPartiesCommunes] = useState(b.parties_communes ?? '');
+  const [servitude, setServitude] = useState<'oui' | 'non'>(b.servitude_residence_principale ? 'oui' : 'non');
   const logement = b.type_bien !== 'garage';
 
   function valider() {
@@ -124,6 +125,7 @@ export function RubriqueIdentite({ fiche, onEnregistre }: PropsRubrique) {
       identifiant_fiscal: id || null,
       type_habitat: logement ? habitat : null,
       regime_juridique: regime,
+      servitude_residence_principale: logement && servitude === 'oui',
       parties_communes: logement && (regime === 'copropriete' || habitat === 'collectif') ? partiesCommunes.trim() || null : null,
       periode_construction: logement ? periode : null,
       entite_id: entite,
@@ -191,6 +193,24 @@ export function RubriqueIdentite({ fiche, onEnregistre }: PropsRubrique) {
           ]}
         />
       </View>
+      {logement ? (
+        <View style={styles.bloc}>
+          <Libelle>Servitude de résidence principale</Libelle>
+          <Text style={styles.aide}>
+            Le plan local d’urbanisme impose-t-il, dans la zone du logement, de le louer uniquement comme résidence principale
+            (code de l’urbanisme, article L. 151-14-1) ? La mairie peut vous le confirmer.
+          </Text>
+          <PilulesChoix
+            libelleGroupe="Servitude de résidence principale"
+            valeur={servitude}
+            onChange={setServitude}
+            options={[
+              { valeur: 'non', libelle: 'Non' },
+              { valeur: 'oui', libelle: 'Oui' },
+            ]}
+          />
+        </View>
+      ) : null}
       {logement && (regime === 'copropriete' || habitat === 'collectif') ? (
         <Champ
           libelle="Parties et équipements communs"

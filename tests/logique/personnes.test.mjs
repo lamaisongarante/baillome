@@ -44,3 +44,11 @@ test('colocation : plusieurs locataires, sauf couple marié ou pacsé (article 8
   assert.equal(estColocation(2, false), true);
   assert.equal(estColocation(2, true), false);
 });
+
+test('nom des fichiers du bail : NOM-Prénom, sans accents ni caractères gênants, colocataires à la suite', async () => {
+  const { nomFichierBail } = await import('../../src/lib/personnes.ts');
+  assert.equal(nomFichierBail('Bail', [{ prenom: 'Léa', nom: 'Hussel' }]), 'Bail-HUSSEL-Lea.pdf');
+  assert.equal(nomFichierBail('Annexes', [{ prenom: 'Léa', nom: 'Hussel' }, { prenom: 'jean-françois', nom: "d'Aubigné" }]), 'Annexes-HUSSEL-Lea-D-AUBIGNE-Jean-Francois.pdf');
+  assert.equal(nomFichierBail('Bail', [{ prenom: null, nom: 'Martin / Petit' }]), 'Bail-MARTIN-PETIT.pdf');
+  assert.equal(nomFichierBail('Bail', []), 'Bail.pdf');
+});
