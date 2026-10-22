@@ -7,6 +7,7 @@ import {
   CONTRATS_TYPES,
   NOTICES,
   dernierIrlPublie,
+  type BlocageSignature,
   type Controle,
 } from '@moteur/bail';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
@@ -18,7 +19,7 @@ import { PilulesChoix } from '@/components/choix';
 import { BoutonPrincipal, CaseACocher, Champ, MessageErreur, MessageInfo } from '@/components/formulaire';
 import { Icone } from '@/components/icones';
 import { chargerDossierBail, enregistrerConditions, zoneTendueALaDate, type ConditionsBail, type DossierBail } from '@/lib/baux';
-import { genererEtPartagerBail } from '@/lib/pdf/generer-bail';
+import { chargerEtatSignature, genererAnnexes, genererBail } from '@/lib/pdf/generer-bail';
 import { LIBELLES_TYPE_BAIL, estColocation } from '@/lib/personnes';
 import { formaterDateEnCours, lireDateFrancaise, lireEntier, lireNombre, versDateFrancaise, versTexteNombre } from '@/lib/saisie';
 import { supabase } from '@/lib/supabase';
@@ -56,10 +57,13 @@ export default function EcranBail() {
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enregistre, setEnregistre] = useState(false);
-  const [generation, setGeneration] = useState(false);
+  const [generation, setGeneration] = useState<'bail' | 'annexes' | null>(null);
+  const [blocages, setBlocages] = useState<BlocageSignature[] | null>(null);
   const [messageGeneration, setMessageGeneration] = useState<string | null>(null);
 
   useEffect(() => {
+    // Ce qui bloque l'envoi à la signature, affiché sous les boutons de génération.
+    chargerEtatSignature(id).then((e) => setBlocages('blocages' in e ? e.blocages : null));
     chargerDossierBail(id).then((d) => {
       setDossier(d);
       if (!d) return;
@@ -176,20 +180,25 @@ export default function EcranBail() {
     setEnregistre(true);
   }
 
-  async function generer() {
+  async function generer(quoi: 'bail' | 'annexes') {
     setMessageGeneration(null);
     setErreur(null);
     // On enregistre d'abord, pour que le PDF reprenne exactement ce qui est affiché.
     await enregistrer();
     if (courant?.erreurs.length) return;
-    setGeneration(true);
+    setGeneration(quoi);
     try {
-      setMessageGeneration(await genererEtPartagerBail(id));
+      setMessageGeneration(await (quoi === 'bail' ? genererBail(id) : genererAnnexes(id)));
+      actualiserBlocages();
     } catch {
       setErreur('Le PDF n’a pas pu être créé. Réessayez dans un instant.');
     } finally {
-      setGeneration(false);
+      setGeneration(null);
     }
+  }
+
+  function actualiserBlocages() {
+    chargerEtatSignature(id).then((e) => setBlocages('blocages' in e ? e.blocages : null));
   }
 
   const revenir = () => (router.canGoBack() ? router.back() : router.replace(`/bien/${dossier.bien.id}` as Href));
@@ -518,18 +527,40 @@ export default function EcranBail() {
           {habitation ? (
             <>
               <Pressable
-                onPress={generer}
-                disabled={generation}
+                onPress={() => generer('bail')}
+                disabled={generation !== null}
                 style={({ pressed }) => [styles.boutonPdf, pressed && styles.appuye]}
                 accessibilityRole="button">
                 <Icone nom="document" couleur={couleurs.pin} taille={18} epaisseur={1.9} />
-                <Text style={styles.boutonPdfTexte}>{generation ? 'Création du PDF…' : 'Générer le projet de bail (PDF)'}</Text>
+                <Text style={styles.boutonPdfTexte}>{generation === 'bail' ? 'Création du bail…' : 'Générer le bail'}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => generer('annexes')}
+                disabled={generation !== null}
+                style={({ pressed }) => [styles.boutonPdf, pressed && styles.appuye]}
+                accessibilityRole="button">
+                <Icone nom="document" couleur={couleurs.pin} taille={18} epaisseur={1.9} />
+                <Text style={styles.boutonPdfTexte}>{generation === 'annexes' ? 'Création des annexes…' : 'Générer les annexes'}</Text>
               </Pressable>
               <Text style={styles.aide}>
-                Projet à relire, non signé : le texte officiel du contrat type et la notice d’information, remplis avec vos données.
-                {controles.some((c) => c.niveau === 'bloquant') ? ' Les points « à corriger » apparaîtront « à compléter » dans le projet.' : ''}
+                Projet à relire, non signé. Les annexes réunissent en un seul PDF le règlement de copropriété et les diagnostics rangés
+                dans le coffre, puis la notice d’information.
               </Text>
               {messageGeneration ? <MessageInfo>{messageGeneration}</MessageInfo> : null}
+              {blocages ? (
+                blocages.length ? (
+                  <View style={styles.blocages}>
+                    <Text style={styles.titreBlocages}>Avant l’envoi à la signature</Text>
+                    {blocages.map((b) => (
+                      <Text key={b.code} style={styles.ligneBlocage}>
+                        • {b.libelle}
+                      </Text>
+                    ))}
+                  </View>
+                ) : (
+                  <MessageInfo>Rien n’empêche l’envoi à la signature.</MessageInfo>
+                )
+              ) : null}
             </>
           ) : null}
           <View style={styles.bas} />
@@ -649,5 +680,8 @@ const styles = StyleSheet.create({
   },
   boutonPdfTexte: { fontFamily: polices.interfaceGras, fontSize: 15, color: couleurs.pin },
   appuye: { opacity: 0.85 },
+  blocages: { borderRadius: 20, padding: 14, gap: 6, backgroundColor: couleurs.corail },
+  titreBlocages: { fontFamily: polices.techniqueGras, fontSize: 10.5, letterSpacing: 0.5, color: couleurs.texteCorail },
+  ligneBlocage: { fontFamily: polices.interface, fontSize: 13.5, lineHeight: 19, color: couleurs.texte },
   bas: { height: 24 },
 });

@@ -7,7 +7,7 @@
 // source ; le plafond du dépôt vient des paramètres de la règle R-03
 // (table regles_versions), jamais du code.
 
-import { evaluerR04, type BienCheckup, type RegleData } from './moteur.ts';
+import { diagnosticsRequis, evaluerR04, type BienCheckup, type RegleData } from './moteur.ts';
 
 export type TypeBail = 'nu' | 'meuble' | 'garage';
 
@@ -339,6 +339,8 @@ export function blocagesAvantSignature(args: {
   /** Libellés des questions du check-up encore sans réponse. */
   libelleQuestion: (code: string) => string;
   mentionsACompleter: string[];
+  /** Natures des diagnostics rangés au coffre pour ce bien (documents.nature_diagnostic). */
+  naturesAuCoffre?: string[];
 }): BlocageSignature[] {
   const blocages: BlocageSignature[] = args.mentionsACompleter.map((m) => ({ code: `mention:${m}`, source: 'Bail', libelle: `À compléter : ${m}` }));
   if (args.bien.type_bien !== 'garage' && !args.bien.dpe_classe) {
@@ -355,5 +357,25 @@ export function blocagesAvantSignature(args: {
       }
     }
   }
+  // Annexes : chaque diagnostic obligatoire doit être rangé au coffre pour être joint au bail.
+  if (args.naturesAuCoffre) {
+    const { requis } = diagnosticsRequis({ bien: args.bien, reponses: args.reponses });
+    for (const n of requis) {
+      if (!args.naturesAuCoffre.includes(n)) {
+        blocages.push({ code: `coffre:${n}`, source: n === 'dpe' ? 'R-01' : 'R-04', libelle: `${LIBELLES_DIAGNOSTICS[n]} : document à ranger dans le coffre` });
+      }
+    }
+  }
   return blocages;
 }
+
+/** Libellés des diagnostics du dossier de diagnostic technique. */
+export const LIBELLES_DIAGNOSTICS: Record<string, string> = {
+  dpe: 'Diagnostic de performance énergétique',
+  crep: 'Constat de risque d’exposition au plomb',
+  electricite: 'État de l’installation intérieure d’électricité',
+  gaz: 'État de l’installation intérieure de gaz',
+  erp: 'État des risques et pollutions',
+  bruit: 'État des nuisances sonores aériennes',
+  amiante: 'Dossier amiante des parties privatives',
+};

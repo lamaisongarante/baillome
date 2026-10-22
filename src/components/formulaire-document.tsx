@@ -4,11 +4,14 @@ import { PilulesChoix } from '@/components/choix';
 import { CaseACocher, Champ } from '@/components/formulaire';
 import { LIBELLES } from '@/lib/biens';
 import { TYPES_DOCUMENT, type Coffre, type TypeDocument } from '@/lib/coffre';
+import { LIBELLES_DIAGNOSTICS } from '@moteur/bail';
 import { estDansLeFutur, formaterDateEnCours, lireDateFrancaise } from '@/lib/saisie';
 import { couleurs, polices } from '@/theme/tokens';
 
 export type ValeursDocument = {
   type: TypeDocument | null;
+  /** Nature du diagnostic (dossier de diagnostic technique), pour un document « Diagnostic ». */
+  nature: string | null;
   titre: string;
   bienId: string | null;
   entiteId: string | null;
@@ -19,6 +22,7 @@ export type ValeursDocument = {
 
 export const VALEURS_VIDES: ValeursDocument = {
   type: null,
+  nature: null,
   titre: '',
   bienId: null,
   entiteId: null,
@@ -32,8 +36,9 @@ const OPTIONS_TYPES = (Object.keys(TYPES_DOCUMENT) as TypeDocument[]).map((v) =>
 /** Vérifie la saisie et prépare les champs à enregistrer, ou renvoie un message d'erreur. */
 export function lireValeurs(v: ValeursDocument):
   | { erreur: string }
-  | { champs: { type_document: TypeDocument; titre: string; bien_id: string | null; entite_id: string | null; date_document: string | null; date_validite: string | null; deductible: boolean } } {
+  | { champs: { type_document: TypeDocument; nature_diagnostic: string | null; titre: string; bien_id: string | null; entite_id: string | null; date_document: string | null; date_validite: string | null; deductible: boolean } } {
   if (!v.type) return { erreur: 'Choisissez le type de document.' };
+  if (v.type === 'diagnostic' && !v.nature) return { erreur: 'Précisez de quel diagnostic il s’agit.' };
   if (!v.titre.trim()) return { erreur: 'Donnez un nom au document.' };
   const dateDocument = v.dateDocument.trim() ? lireDateFrancaise(v.dateDocument) : null;
   if (v.dateDocument.trim() && !dateDocument) return { erreur: 'Date du document : utilisez le format JJ/MM/AAAA.' };
@@ -43,6 +48,7 @@ export function lireValeurs(v: ValeursDocument):
   return {
     champs: {
       type_document: v.type,
+      nature_diagnostic: v.type === 'diagnostic' ? v.nature : null,
       titre: v.titre.trim(),
       bien_id: v.bienId,
       entite_id: v.entiteId,
@@ -77,6 +83,24 @@ export function FormulaireDocument({
         <Text style={styles.libelle}>TYPE DE DOCUMENT</Text>
         <PilulesChoix libelleGroupe="Type de document" valeur={valeurs.type} onChange={choisirType} options={OPTIONS_TYPES} />
       </View>
+
+      {valeurs.type === 'diagnostic' ? (
+        <View style={styles.bloc}>
+          <Text style={styles.libelle}>QUEL DIAGNOSTIC ?</Text>
+          <PilulesChoix
+            libelleGroupe="Nature du diagnostic"
+            valeur={valeurs.nature}
+            onChange={(nature) => {
+              // Le nom du diagnostic sert de titre tant que rien d'autre n'est saisi.
+              const titreParDefaut =
+                !valeurs.titre || valeurs.titre === TYPES_DOCUMENT.diagnostic || Object.values(LIBELLES_DIAGNOSTICS).includes(valeurs.titre);
+              maj({ nature, titre: titreParDefaut ? LIBELLES_DIAGNOSTICS[nature] : valeurs.titre });
+            }}
+            options={Object.entries(LIBELLES_DIAGNOSTICS).map(([valeur, libelle]) => ({ valeur, libelle }))}
+          />
+          <Text style={styles.aideBloc}>Il sera joint au bail dans le dossier de diagnostic technique.</Text>
+        </View>
+      ) : null}
 
       <Champ libelle="Nom du document" value={valeurs.titre} onChangeText={(titre) => maj({ titre })} />
 
@@ -153,4 +177,5 @@ const styles = StyleSheet.create({
   deuxColonnes: { flexDirection: 'row', gap: 10 },
   colonne: { flex: 1 },
   aide: { fontFamily: polices.interface, fontSize: 12, color: couleurs.texteSecondaire, marginTop: -8 },
+  aideBloc: { fontFamily: polices.interface, fontSize: 12, color: couleurs.texteSecondaire },
 });

@@ -34,6 +34,7 @@ export default function DocumentDuCoffre() {
       if (!d) return;
       setValeurs({
         type: d.type_document as TypeDocument,
+        nature: d.nature_diagnostic ?? null,
         titre: d.titre,
         bienId: d.bien_id,
         entiteId: d.entite_id,

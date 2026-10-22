@@ -449,3 +449,38 @@ export function scoreMoyen(scores: (number | null)[]): number | null {
   const v = scores.filter((s): s is number => s !== null);
   return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null;
 }
+
+/**
+ * Diagnostics à annexer au bail (dossier de diagnostic technique), selon les
+ * mêmes conditions que R-04 : DPE pour un logement (R-01) ; plomb pour une
+ * construction d'avant 1949 ; électricité et gaz pour une installation de plus
+ * de 15 ans ; nuisances sonores en zone de bruit ; état des risques si la
+ * commune est exposée. « Je ne sais pas » compte comme « oui » (décision du
+ * 22/10/2026). L'amiante n'est pas annexé : il doit seulement être tenu à
+ * disposition. Une question sans réponse est renvoyée dans `aRepondre`.
+ */
+export function diagnosticsRequis(c: Pick<Contexte, 'bien' | 'reponses'>): { requis: string[]; aRepondre: string[] } {
+  const b = c.bien;
+  const rep = c.reponses;
+  const requis: string[] = [];
+  const aRepondre: string[] = [];
+  if (estLogement(b)) {
+    requis.push('dpe');
+    const construction = b.periode_construction === 'avant_1949' ? 'avant_1949' : b.periode_construction ? 'apres_1949' : rep.construction;
+    if (!construction) aRepondre.push('construction');
+    else if (construction === 'avant_1949' || construction === 'nsp') requis.push('crep');
+    const elec = rep.electricite_plus_15_ans;
+    if (!elec) aRepondre.push('electricite_plus_15_ans');
+    else if (elec === 'oui' || elec === 'nsp') requis.push('electricite');
+    const gaz = rep.gaz;
+    if (!gaz) aRepondre.push('gaz');
+    else if (gaz === 'plus_15_ans' || gaz === 'nsp') requis.push('gaz');
+    const bruit = rep.zone_bruit;
+    if (!bruit) aRepondre.push('zone_bruit');
+    else if (bruit === 'oui' || bruit === 'nsp') requis.push('bruit');
+  }
+  const risques = rep.commune_risques;
+  if (!risques) aRepondre.push('commune_risques');
+  else if (risques === 'oui' || risques === 'nsp') requis.push('erp');
+  return { requis, aRepondre };
+}

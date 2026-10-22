@@ -2,18 +2,23 @@
 // partage (Fichiers, email, AirDrop…). La génération côté serveur viendra à
 // l'étape 5.
 import { CONTRATS_TYPES, NOTICES, blocagesAvantSignature, versionApplicable, type BlocageSignature } from '@moteur/bail';
-import type { BienCheckup, RegleData } from '@moteur/moteur';
+import { diagnosticsRequis, type BienCheckup, type RegleData } from '@moteur/moteur';
 import { question } from '@moteur/questions';
 import * as Print from 'expo-print';
+import { File } from 'expo-file-system';
+import { cacheDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { PDFDocument } from 'pdf-lib';
 import { Platform } from 'react-native';
 
 import { TYPES_DIAGNOSTIC } from '@/components/fiche/rubriques';
 import { chargerDossierBail } from '@/lib/baux';
+import { lienTemporaire } from '@/lib/coffre';
 import { phraseEquipements } from '@/lib/equipements';
 import { estColocation } from '@/lib/personnes';
 import { supabase } from '@/lib/supabase';
 
+import { htmlPageDeGarde, type PiecesAnnexes } from './annexes';
 import { htmlBail, htmlNoticeBail, mentionsACompleter, type DonneesBail } from './bail';
 
 export async function chargerDonneesBail(bailId: string): Promise<{ donnees: DonneesBail } | { impossible: string }> {
@@ -126,7 +131,7 @@ export async function chargerDonneesBail(bailId: string): Promise<{ donnees: Don
  * périmés (R-04, avec les réponses du check-up). L'étape de signature reprendra
  * cette liste.
  */
-export async function chargerBlocagesSignature(bienId: string, donnees: DonneesBail): Promise<BlocageSignature[]> {
+export async function chargerBlocagesSignature(bienId: string, donnees: DonneesBail, naturesAuCoffre: string[]): Promise<BlocageSignature[]> {
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const [bien, reponses, diagnostics, regle, version, situations] = await Promise.all([
     supabase.from('biens').select('*').eq('id', bienId).single(),
@@ -154,42 +159,147 @@ export async function chargerBlocagesSignature(bienId: string, donnees: DonneesB
     titresR04: Object.fromEntries((situations.data ?? []).map((x) => [x.code, x.titre ?? x.code])),
     libelleQuestion: (code) => question(code)?.libelle ?? code,
     mentionsACompleter: mentionsACompleter(donnees),
+    naturesAuCoffre,
   });
 }
 
-function messageBlocages(blocages: BlocageSignature[]): string {
-  if (!blocages.length) return 'Projet créé : le bail et sa notice d’information. Rien n’empêche l’envoi à la signature.';
-  return `Projet créé : le bail et sa notice d’information. Avant l’envoi à la signature : ${blocages.map((b) => b.libelle).join(' ; ')}.`;
+/** État avant signature, affiché sous les boutons : ce qui bloque l'envoi. */
+export async function chargerEtatSignature(bailId: string): Promise<{ blocages: BlocageSignature[] } | { impossible: string }> {
+  const r = await chargerDonneesBail(bailId);
+  if ('impossible' in r) return r;
+  const bienId = (await supabase.from('baux').select('bien_id').eq('id', bailId).single()).data?.bien_id;
+  if (!bienId) return { impossible: 'Ce bail est introuvable.' };
+  const pieces = await chargerPieces(bienId, r.donnees);
+  return { blocages: await chargerBlocagesSignature(bienId, r.donnees, pieces.diagnostics.map((d) => d.nature)) };
 }
 
-/** Génère le PDF et ouvre le partage. Renvoie un message à afficher, ou null. */
-export async function genererEtPartagerBail(bailId: string): Promise<string | null> {
+type DocumentAnnexe = { titre: string; date: string | null; nature: string | null; chemin: string; type: string | null };
+
+/** Documents du coffre à annexer : règlement de copropriété et diagnostics (le plus récent de chaque nature). */
+async function chargerPieces(bienId: string, d: DonneesBail): Promise<PiecesAnnexes & { fichiers: DocumentAnnexe[] }> {
+  const [docs, bien, reponses] = await Promise.all([
+    supabase
+      .from('documents')
+      .select('titre, type_document, nature_diagnostic, date_document, fichier_chemin, fichier_type, cree_le')
+      .eq('bien_id', bienId)
+      .in('type_document', ['reglement_copropriete', 'diagnostic'])
+      .not('fichier_chemin', 'is', null)
+      .order('date_document', { ascending: false, nullsFirst: false })
+      .order('cree_le', { ascending: false }),
+    supabase.from('biens').select('*').eq('id', bienId).single(),
+    supabase.from('reponses_checkup').select('question, valeur').eq('bien_id', bienId),
+  ]);
+  const liste = docs.data ?? [];
+  const reglement = liste.find((x) => x.type_document === 'reglement_copropriete') ?? null;
+  const parNature = new Map<string, (typeof liste)[number]>();
+  for (const x of liste) if (x.type_document === 'diagnostic' && x.nature_diagnostic && !parNature.has(x.nature_diagnostic)) parNature.set(x.nature_diagnostic, x);
+  const { requis } = bien.data
+    ? diagnosticsRequis({ bien: bien.data as BienCheckup, reponses: Object.fromEntries((reponses.data ?? []).map((q) => [q.question, q.valeur])) })
+    : { requis: [] as string[] };
+  // Ordre officiel : A (règlement), puis B dans l'ordre des diagnostics requis, puis les autres diagnostics.
+  const ordre = [...requis, ...[...parNature.keys()].filter((n) => !requis.includes(n))];
+  const diagnostics = ordre.flatMap((n) => {
+    const x = parNature.get(n);
+    return x ? [{ titre: x.titre, date: x.date_document, nature: n, chemin: x.fichier_chemin!, type: x.fichier_type }] : [];
+  });
+  return {
+    copropriete: d.bien.regime_juridique === 'copropriete',
+    reglement: reglement ? { titre: reglement.titre, date: reglement.date_document } : null,
+    diagnosticsRequis: requis,
+    diagnostics,
+    notice: d.fichierNotice ? { depuis: NOTICES.find((n) => n.fichier === d.fichierNotice)?.depuis ?? '' } : null,
+    fichiers: [
+      ...(reglement ? [{ titre: reglement.titre, date: reglement.date_document, nature: null, chemin: reglement.fichier_chemin!, type: reglement.fichier_type }] : []),
+      ...diagnostics,
+    ],
+  };
+}
+
+// A4 (595 × 842 points) ; sur iPhone, les marges de 19 mm sont données à l'impression.
+const imprimer = (h: string) =>
+  Print.printToFileAsync({
+    html: h,
+    width: 595,
+    height: 842,
+    ...(Platform.OS === 'ios' ? { margins: { left: 54, right: 54, top: 54, bottom: 54 } } : {}),
+  });
+
+async function partager(uri: string, titre: string) {
+  if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: titre });
+}
+
+/** « Générer le bail » : le bail seul, un fichier, une fenêtre de partage. */
+export async function genererBail(bailId: string): Promise<string | null> {
   const r = await chargerDonneesBail(bailId);
   if ('impossible' in r) return r.impossible;
-  const bienId = (await supabase.from('baux').select('bien_id').eq('id', bailId).single()).data?.bien_id;
-  const message = messageBlocages(bienId ? await chargerBlocagesSignature(bienId, r.donnees) : []);
-  const notice = htmlNoticeBail(r.donnees);
   if (Platform.OS === 'web') {
     // Sur ordinateur (essais uniquement), le projet remplace la page, prêt à imprimer.
     document.open();
     document.write(htmlBail(r.donnees));
     document.close();
-    return message;
+    return null;
   }
-  // Deux documents du même dossier : le bail, puis la notice (annexe C).
-  // A4 (595 × 842 points) ; sur iPhone, les marges de 19 mm sont données à l'impression.
-  const imprimer = (h: string) =>
-    Print.printToFileAsync({
-      html: h,
-      width: 595,
-      height: 842,
-      ...(Platform.OS === 'ios' ? { margins: { left: 54, right: 54, top: 54, bottom: 54 } } : {}),
-    });
-  const bail = await imprimer(htmlBail(r.donnees));
-  const annexe = notice ? await imprimer(notice) : null;
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(bail.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Projet de bail' });
-    if (annexe) await Sharing.shareAsync(annexe.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Notice d’information (annexe C)' });
+  const { uri } = await imprimer(htmlBail(r.donnees));
+  await partager(uri, 'Projet de bail');
+  return null;
+}
+
+/**
+ * « Générer les annexes » : un seul PDF — page de garde, puis A (règlement de
+ * copropriété), B (diagnostics du coffre), C (notice d'information). L'état des
+ * lieux (D) s'ajoutera à l'étape 4.
+ */
+export async function genererAnnexes(bailId: string): Promise<string | null> {
+  const r = await chargerDonneesBail(bailId);
+  if ('impossible' in r) return r.impossible;
+  const bienId = (await supabase.from('baux').select('bien_id').eq('id', bailId).single()).data?.bien_id;
+  if (!bienId) return 'Ce bail est introuvable.';
+  const pieces = await chargerPieces(bienId, r.donnees);
+  const d = r.donnees;
+  const adresse = [d.bien.adresse, [d.bien.code_postal, d.bien.commune].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const garde = htmlPageDeGarde({ numeroBien: d.bien.numero, adresse, pieces, projet: d.projet });
+  const notice = htmlNoticeBail(d);
+  if (Platform.OS === 'web') {
+    document.open();
+    document.write(garde);
+    document.close();
+    return null;
   }
-  return message;
+
+  const fusion = await PDFDocument.create();
+  const ajouterPdf = async (octets: ArrayBuffer) => {
+    const source = await PDFDocument.load(octets, { ignoreEncryption: true });
+    for (const p of await fusion.copyPages(source, source.getPageIndices())) fusion.addPage(p);
+  };
+  const ajouterImage = async (octets: ArrayBuffer, type: string) => {
+    const image = type === 'image/png' ? await fusion.embedPng(octets) : await fusion.embedJpg(octets);
+    const page = fusion.addPage([595, 842]);
+    const echelle = Math.min((595 - 80) / image.width, (842 - 80) / image.height);
+    const l = image.width * echelle;
+    const h = image.height * echelle;
+    page.drawImage(image, { x: (595 - l) / 2, y: (842 - h) / 2, width: l, height: h });
+  };
+
+  await ajouterPdf(await new File((await imprimer(garde)).uri).arrayBuffer());
+  const nonJoints: string[] = [];
+  for (const f of pieces.fichiers) {
+    try {
+      const lien = await lienTemporaire(f.chemin);
+      if (!lien) throw new Error('lien');
+      const octets = await (await fetch(lien)).arrayBuffer();
+      if (f.type === 'application/pdf') await ajouterPdf(octets);
+      else if (f.type === 'image/jpeg' || f.type === 'image/png') await ajouterImage(octets, f.type);
+      else throw new Error('format');
+    } catch {
+      nonJoints.push(f.titre);
+    }
+  }
+  if (notice) await ajouterPdf(await new File((await imprimer(notice)).uri).arrayBuffer());
+
+  const chemin = `${cacheDirectory}annexes-bail-${String(d.bien.numero).padStart(2, '0')}.pdf`;
+  await writeAsStringAsync(chemin, await fusion.saveAsBase64(), { encoding: 'base64' });
+  await partager(chemin, 'Annexes au contrat de location');
+  return nonJoints.length
+    ? `Ces documents du coffre n’ont pas pu être joints (format ou connexion) : ${nonJoints.join(' ; ')}. Rangez-les en PDF, JPEG ou PNG.`
+    : null;
 }

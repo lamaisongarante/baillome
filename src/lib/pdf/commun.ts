@@ -129,6 +129,16 @@ h2 { margin: 12pt 0 3pt 0; font-family: 'Bricolage Grotesque', Helvetica, Arial,
 h3 { margin: 9pt 0 2pt 0; font-size: 9.75pt; font-weight: 700; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
 h4 { margin: 7pt 0 2pt 0; font-size: 9.75pt; font-weight: 600; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
 .projet { font-weight: 600; color: ${PIN}; }
+.pieces { margin-top: 8pt; }
+.piece { display: flex; gap: 10pt; padding: 8pt 0; border-top: 0.75pt solid ${FILET}; break-inside: avoid; page-break-inside: avoid; }
+.lettre-piece { font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 18pt; font-weight: 800; color: ${PIN}; min-width: 20pt; line-height: 1; }
+.contenu-piece { flex: 1; }
+.intitule-piece { font-weight: 700; color: ${PIN}; margin-bottom: 2pt; }
+.sous-piece, .joint { padding: 1pt 0; }
+.nom-diag { color: ${TEXTE}; }
+.manquant { font-weight: 700; color: ${PIN}; text-decoration: underline; text-decoration-style: double; }
+.alerte { border-width: 2pt; }
+.alerte .manquant { padding: 1pt 0; text-decoration: none; }
 </style></head><body>
 <div class="entete"><div class="marque"><span class="logo">${LOGO}</span>Baillome</div><span class="mono reference">${html(reference)}</span></div>
 ${corps}

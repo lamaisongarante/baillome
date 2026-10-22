@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 export const TYPES_DOCUMENT = {
   bail_annexes: 'Bail et annexes',
   diagnostic: 'Diagnostic',
+  reglement_copropriete: 'Règlement de copropriété',
   assurance: 'Assurance',
   etat_des_lieux: 'État des lieux',
   quittance: 'Quittance',
@@ -25,7 +26,7 @@ export const TYPES_DOCUMENT = {
 export type TypeDocument = keyof typeof TYPES_DOCUMENT;
 
 export const COLONNES_DOCUMENT =
-  'id, type_document, titre, bien_id, personne_id, entite_id, date_document, date_validite, deductible, fichier_chemin, fichier_type, cree_le';
+  'id, type_document, titre, nature_diagnostic, bien_id, personne_id, entite_id, date_document, date_validite, deductible, fichier_chemin, fichier_type, cree_le';
 
 export type Coffre = {
   documents: DocumentCoffre[];

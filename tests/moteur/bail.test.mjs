@@ -185,3 +185,22 @@ test('avant signature : état des risques absent à La Valette-du-Var → envoi 
     ['À compléter : Lieu de signature'],
   );
 });
+
+test('annexes : diagnostics obligatoires selon R-04, et document manquant au coffre → envoi bloqué', async () => {
+  const { diagnosticsRequis } = await import('../../supabase/functions/_partage/moteur.ts');
+  const { blocagesAvantSignature } = await import('../../supabase/functions/_partage/bail.ts');
+  const bien = { type_bien: 'appartement', periode_construction: '1975_1989', type_habitat: 'collectif', dpe_classe: 'D', situation_locative: 'loue_vide' };
+  const reponses = { electricite_plus_15_ans: 'oui', gaz: 'aucun', permis_avant_1997: 'non', zone_bruit: 'non', commune_risques: 'oui' };
+  assert.deepEqual(diagnosticsRequis({ bien, reponses }), { requis: ['dpe', 'electricite', 'erp'], aRepondre: [] });
+  assert.deepEqual(diagnosticsRequis({ bien: { ...bien, periode_construction: 'avant_1949' }, reponses: {} }).aRepondre, [
+    'electricite_plus_15_ans', 'gaz', 'zone_bruit', 'commune_risques',
+  ]);
+  const v = (await db.query(`select version, date_effet::text, valable_jusqu_au::text, parametres, source from regles_versions where regle_code = 'R-04'`)).rows[0];
+  const blocages = blocagesAvantSignature({
+    aujourdhui: '2026-10-22', bien, reponses,
+    diagnostics: [{ type: 'electricite', date_realisation: '2024-05-14', resultat: null }, { type: 'erp', date_realisation: '2026-09-01', resultat: null }],
+    regleR04: { code: 'R-04', titre: 'x', validee: true, version: v }, titresR04: {}, libelleQuestion: (q) => q, mentionsACompleter: [],
+    naturesAuCoffre: ['dpe', 'electricite'],
+  });
+  assert.deepEqual(blocages.map((b) => b.libelle), ['État des risques et pollutions : document à ranger dans le coffre']);
+});

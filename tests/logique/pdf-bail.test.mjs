@@ -310,3 +310,29 @@ test('retour de relecture n° 1 : copropriété sans parties communes renseigné
   d.bail.lieu_signature = null;
   assert.deepEqual(mentionsACompleter(d), ['D. Le cas échéant, Enumération des locaux, parties, équipements et accessoires de l\'immeuble à usage commun', 'Lieu de signature']);
 });
+
+test('annexes : page de garde dans l’ordre officiel, pièces manquantes clairement signalées', async () => {
+  const { htmlPageDeGarde, piecesManquantes } = await import('../../src/lib/pdf/annexes.ts');
+  const pieces = {
+    copropriete: true,
+    reglement: null,
+    diagnosticsRequis: ['dpe', 'electricite', 'erp'],
+    diagnostics: [
+      { titre: 'DPE', date: '2022-03-12', nature: 'dpe' },
+      { titre: 'Électricité', date: '2024-05-14', nature: 'electricite' },
+    ],
+    notice: { depuis: '2026-10-18' },
+  };
+  assert.deepEqual(piecesManquantes(pieces), ['Extrait du règlement de copropriété', 'État des risques et pollutions']);
+  const rendu = texteRendu(htmlPageDeGarde({ numeroBien: 1, adresse: '210 avenue de la Libération, 83160 La Valette-du-Var', pieces, projet: true }));
+  assert.ok(rendu.includes('Annexes au contrat de location'));
+  assert.ok(rendu.includes('PIÈCES MANQUANTES · LE BAIL NE PEUT PAS ÊTRE ENVOYÉ À LA SIGNATURE'));
+  assert.ok(rendu.includes('État des risques et pollutions — MANQUANT · obligatoire, à ranger dans le coffre'));
+  assert.ok(rendu.includes('Diagnostic de performance énergétique — joint (12/03/2022)'));
+  // Ordre officiel : A, B, C, D.
+  const ordre = ['Extrait du règlement de copropriété', 'Dossier de diagnostic technique', 'Notice d’information relative', 'État des lieux'].map((t) => rendu.indexOf(t));
+  assert.deepEqual([...ordre].sort((a, b) => a - b), ordre);
+  // Tout est joint : pas d'avertissement.
+  const complet = { ...pieces, reglement: { titre: 'Règlement', date: null }, diagnostics: [...pieces.diagnostics, { titre: 'ERP', date: '2026-09-01', nature: 'erp' }] };
+  assert.ok(!texteRendu(htmlPageDeGarde({ numeroBien: 1, adresse: 'x', pieces: complet, projet: true })).includes('PIÈCES MANQUANTES'));
+});

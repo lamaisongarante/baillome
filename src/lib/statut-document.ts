@@ -12,6 +12,7 @@ export type DocumentCoffre = {
   id: string;
   type_document: string;
   titre: string;
+  nature_diagnostic?: string | null;
   bien_id: string | null;
   personne_id: string | null;
   entite_id: string | null;
