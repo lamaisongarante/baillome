@@ -31,9 +31,10 @@ export function LigneDocument({ doc, jour, premier }: { doc: DocumentCoffre; jou
   ]
     .filter(Boolean)
     .join(' · ');
+  // Un lien « asChild » n'accepte qu'un style unique : on fusionne les deux.
   return (
     <Link href={{ pathname: '/document/[id]', params: { id: doc.id } }} asChild>
-      <Pressable style={[styles.ligne, !premier && styles.separateur]} accessibilityRole="button">
+      <Pressable style={StyleSheet.flatten([styles.ligne, !premier && styles.separateur])} accessibilityRole="button">
         <View style={styles.icone}>
           <Icone nom="document" couleur={couleurs.pin} taille={18} />
         </View>
