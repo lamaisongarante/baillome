@@ -94,8 +94,8 @@ p.tiret { padding-left: 9pt; text-indent: -9pt; }
 .encadre-fort { border: 1.1pt solid ${PIN}; border-radius: 9pt; padding: 9pt 11pt; margin: 8pt 0; break-inside: avoid; page-break-inside: avoid; }
 .etiquette { font-size: 7pt; color: ${SECONDAIRE}; margin-bottom: 3pt; }
 .deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; margin-top: 6pt; }
-.partie-encadre { margin: 0; break-inside: avoid; page-break-inside: avoid; }
-.ligne { padding: 1.5pt 0; }
+.partie-encadre { margin: 0; padding: 7pt 9pt; font-size: 8.75pt; line-height: 1.32; break-inside: avoid; page-break-inside: avoid; }
+.ligne { padding: 1pt 0; }
 .libelle { color: ${SECONDAIRE}; }
 .case { display: inline-block; width: 7pt; height: 7pt; border: 0.9pt solid ${PIN}; border-radius: 1.5pt; vertical-align: -0.5pt; margin: 0 3pt 0 4pt; }
 .case.cochee { background: ${PIN}; }
@@ -110,8 +110,10 @@ p.tiret { padding-left: 9pt; text-indent: -9pt; }
 .dpe .lettre { width: 32pt; height: 32pt; border: 2.25pt solid; border-radius: 7pt; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 18pt; font-weight: 800; }
 .joints { margin: 2pt 0 6pt 9pt; font-size: 8.5pt; }
 .joints .etiquette { display: inline; margin-right: 4pt; }
-.preambule { margin-top: 14pt; border: 0.75pt solid ${TRAIT}; border-radius: 8pt; padding: 8pt 10pt; font-size: 8pt; line-height: 1.35; color: ${SECONDAIRE}; }
+.preambule { margin: 4pt 0 4pt 0; padding: 7pt 10pt; border: 0.75pt solid ${TRAIT}; border-radius: 8pt; font-size: 8pt; line-height: 1.35; color: ${SECONDAIRE}; }
 .preambule p { margin: 2pt 0; }
+.preambule .colonnes { column-count: 2; column-gap: 14pt; }
+.preambule .colonnes p { break-inside: avoid; page-break-inside: avoid; }
 .notes { margin-top: 12pt; padding-top: 6pt; border-top: 0.75pt solid ${FILET}; font-size: 7.5pt; line-height: 1.35; color: ${SECONDAIRE}; }
 .notes p { margin: 1.5pt 0; }
 .signatures { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; margin-top: 8pt; break-inside: avoid; page-break-inside: avoid; }

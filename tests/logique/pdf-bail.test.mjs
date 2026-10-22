@@ -128,7 +128,12 @@ function verifierFidelite(d) {
       const t = m.trim();
       if (!t) continue;
       if (/^\(\d+\)\s/.test(t)) {
-        for (const note of t.split(/\s(?=\(\d+\)\s)/)) assert.ok(rendu.includes(note), `note absente : ${note.slice(0, 60)}`);
+        // Notes : seules les notes appelées sont imprimées, chacune telle quelle.
+        for (const note of t.split(/\s(?=\(\d+\)\s)/)) {
+          const numero = note.match(/^\((\d+)\)/)[1];
+          const appelee = rendu.replace(note, '').includes(`(${numero})`);
+          assert.equal(rendu.includes(note), appelee, `note (${numero}) : imprimée ${rendu.includes(note)}, appelée ${appelee}`);
+        }
       } else if (/^[IVX]+\.\s/.test(t) && !s.includes('[')) {
         // Titre de partie : numéro et intitulé repris (mise en forme propre).
         const intitule = t.replace(/^[IVX]+\.\s*-?\s*/, '').replace(/\.$/, '');
@@ -151,6 +156,7 @@ test('bail nu complet : texte officiel intact, tous les champs remplis', () => {
   assert.ok(rendu.includes('loyer 700,00 € + charges récupérables 50,00 € = 750,00 €'));
   // Rubriques sans objet omises : mandataire, honoraires, solidarité, servitude, colocation.
   assert.ok(!rendu.includes('Honoraires de location'));
+  assert.ok(!rendu.includes('(3) Mention obligatoire'), 'note (3) non appelée');
   assert.ok(!rendu.includes('représenté par le mandataire'));
   assert.ok(!rendu.includes('Clause de solidarité'));
   assert.ok(!rendu.includes('Servitude de résidence principale'));
@@ -235,16 +241,39 @@ test('documents imprimables : jamais de citron, fond blanc', async () => {
 });
 
 
-test('retour de relecture n° 1 : mise en page A4, sans ligatures, préambule en petit à la fin', () => {
+test('mise en page A4, sans ligatures ; préambule en petit sur deux colonnes, sous le bloc titre', () => {
   const h = htmlBail(dossier());
   assert.match(h, /@page \{ size: A4; margin: 19mm; \}/);
   assert.match(h, /font-variant-ligatures: none/);
   assert.ok(!/letter-spacing: 0\.[1-9]/.test(h), 'aucun espacement des lettres');
-  // Préambule : encadré intitulé, placé après les signatures, avant les notes.
   const iPreambule = h.indexOf('PRÉAMBULE DU CONTRAT TYPE (TEXTE OFFICIEL)');
-  assert.ok(iPreambule > h.indexOf('class="signatures"'));
-  assert.ok(iPreambule < h.indexOf('class="notes"'));
+  assert.ok(iPreambule > h.indexOf('class="cartouche"'));
+  assert.ok(iPreambule < h.indexOf('class="partie"'));
   assert.ok(h.indexOf('Champ du contrat type') > iPreambule);
+  assert.match(h, /\.preambule \.colonnes \{ column-count: 2;/);
+});
+
+test('retour de relecture n° 2 : notice séparée, notes appelées seulement, lieu de signature', async () => {
+  const { htmlNoticeBail } = await import('../../src/lib/pdf/bail.ts');
+  const d = dossier();
+  d.bien.chauffage_mode = 'collectif';
+  d.bien.chauffage_repartition = 'tantièmes';
+  d.bien.eau_chaude_mode = 'collective';
+  d.bien.eau_chaude_repartition = 'compteur individuel';
+  d.bail.soumis_evolution_relocation = true;
+  d.bail.lieu_signature = null;
+  const rendu = texteRendu(htmlBail(d));
+  // Le bail ne contient plus la notice ; elle forme un document séparé.
+  assert.ok(!rendu.includes('ANNEXE C · NOTICE D’INFORMATION'));
+  assert.ok(rendu.includes('notice d’information, document séparé du même dossier de signature'));
+  assert.ok(texteRendu(htmlNoticeBail(d)).includes('CONTENU DE LA NOTICE D\'INFORMATION'));
+  // Notes imprimées (cas du bail de test n° 2).
+  const notes = [...htmlBail(d).matchAll(/<div class="notes">(.*?)<\/div>/gs)][0][1];
+  const numeros = [...notes.matchAll(/<p>\((\d+)\)/g)].map((m) => Number(m[1]));
+  assert.deepEqual(numeros, [1, 2, 4, 5, 7, 8, 9, 18, 19, 20, 21]);
+  // Plus de « à à compléter ».
+  assert.ok(!rendu.includes('à à compléter'));
+  assert.ok(rendu.includes('à ……………… (lieu de signature à indiquer)'));
 });
 
 test('retour de relecture n° 1 : parties en deux encadrés, avec les compléments hors contrat type', () => {

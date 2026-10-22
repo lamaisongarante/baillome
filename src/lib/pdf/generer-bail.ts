@@ -1,7 +1,9 @@
 // Génération du projet de bail en PDF sur le téléphone (expo-print), puis
 // partage (Fichiers, email, AirDrop…). La génération côté serveur viendra à
 // l'étape 5.
-import { CONTRATS_TYPES, NOTICES, versionApplicable } from '@moteur/bail';
+import { CONTRATS_TYPES, NOTICES, blocagesAvantSignature, versionApplicable, type BlocageSignature } from '@moteur/bail';
+import type { BienCheckup, RegleData } from '@moteur/moteur';
+import { question } from '@moteur/questions';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
@@ -12,7 +14,7 @@ import { phraseEquipements } from '@/lib/equipements';
 import { estColocation } from '@/lib/personnes';
 import { supabase } from '@/lib/supabase';
 
-import { htmlBail, mentionsACompleter, type DonneesBail } from './bail';
+import { htmlBail, htmlNoticeBail, mentionsACompleter, type DonneesBail } from './bail';
 
 export async function chargerDonneesBail(bailId: string): Promise<{ donnees: DonneesBail } | { impossible: string }> {
   const dossier = await chargerDossierBail(bailId);
@@ -119,21 +121,54 @@ export async function chargerDonneesBail(bailId: string): Promise<{ donnees: Don
 }
 
 /**
- * Message sur les mentions obligatoires manquantes. Le projet peut être généré,
- * mais il ne pourra pas être envoyé à la signature tant qu'elles manquent
- * (retour de relecture du 22/10/2026) : l'étape de signature reprendra cette liste.
+ * Ce qui empêche l'envoi à la signature (relectures du 22/10/2026) : mentions
+ * « à compléter », DPE absent (R-01), diagnostics obligatoires absents ou
+ * périmés (R-04, avec les réponses du check-up). L'étape de signature reprendra
+ * cette liste.
  */
-function messageMentions(d: DonneesBail): string | null {
-  const manquantes = mentionsACompleter(d);
-  if (!manquantes.length) return null;
-  return `Projet créé. ${manquantes.length} mention${manquantes.length > 1 ? 's restent' : ' reste'} à compléter : ${manquantes.join(' ; ')}. Le bail ne pourra pas être envoyé à la signature tant qu’elles manquent.`;
+export async function chargerBlocagesSignature(bienId: string, donnees: DonneesBail): Promise<BlocageSignature[]> {
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const [bien, reponses, diagnostics, regle, version, situations] = await Promise.all([
+    supabase.from('biens').select('*').eq('id', bienId).single(),
+    supabase.from('reponses_checkup').select('question, valeur').eq('bien_id', bienId),
+    supabase.from('diagnostics').select('type, date_realisation, resultat').eq('bien_id', bienId),
+    supabase.from('regles').select('code, titre, validee').eq('code', 'R-04').single(),
+    supabase
+      .from('regles_versions')
+      .select('version, date_effet, valable_jusqu_au, parametres, source')
+      .eq('regle_code', 'R-04')
+      .lte('date_effet', aujourdhui)
+      .order('date_effet', { ascending: false })
+      .limit(1),
+    supabase.from('regles_situations').select('code, titre').eq('regle_code', 'R-04'),
+  ]);
+  if (!bien.data || !regle.data || !version.data?.[0]) {
+    return [{ code: 'chargement', source: 'Bail', libelle: 'Les diagnostics n’ont pas pu être vérifiés : vérifiez votre connexion.' }];
+  }
+  return blocagesAvantSignature({
+    aujourdhui,
+    bien: bien.data as BienCheckup,
+    reponses: Object.fromEntries((reponses.data ?? []).map((r) => [r.question, r.valeur])),
+    diagnostics: diagnostics.data ?? [],
+    regleR04: { ...(regle.data as Omit<RegleData, 'version'>), version: version.data[0] as RegleData['version'] },
+    titresR04: Object.fromEntries((situations.data ?? []).map((x) => [x.code, x.titre ?? x.code])),
+    libelleQuestion: (code) => question(code)?.libelle ?? code,
+    mentionsACompleter: mentionsACompleter(donnees),
+  });
+}
+
+function messageBlocages(blocages: BlocageSignature[]): string {
+  if (!blocages.length) return 'Projet créé : le bail et sa notice d’information. Rien n’empêche l’envoi à la signature.';
+  return `Projet créé : le bail et sa notice d’information. Avant l’envoi à la signature : ${blocages.map((b) => b.libelle).join(' ; ')}.`;
 }
 
 /** Génère le PDF et ouvre le partage. Renvoie un message à afficher, ou null. */
 export async function genererEtPartagerBail(bailId: string): Promise<string | null> {
   const r = await chargerDonneesBail(bailId);
   if ('impossible' in r) return r.impossible;
-  const message = messageMentions(r.donnees);
+  const bienId = (await supabase.from('baux').select('bien_id').eq('id', bailId).single()).data?.bien_id;
+  const message = messageBlocages(bienId ? await chargerBlocagesSignature(bienId, r.donnees) : []);
+  const notice = htmlNoticeBail(r.donnees);
   if (Platform.OS === 'web') {
     // Sur ordinateur (essais uniquement), le projet remplace la page, prêt à imprimer.
     document.open();
@@ -141,15 +176,20 @@ export async function genererEtPartagerBail(bailId: string): Promise<string | nu
     document.close();
     return message;
   }
+  // Deux documents du même dossier : le bail, puis la notice (annexe C).
   // A4 (595 × 842 points) ; sur iPhone, les marges de 19 mm sont données à l'impression.
-  const { uri } = await Print.printToFileAsync({
-    html: htmlBail(r.donnees),
-    width: 595,
-    height: 842,
-    ...(Platform.OS === 'ios' ? { margins: { left: 54, right: 54, top: 54, bottom: 54 } } : {}),
-  });
+  const imprimer = (h: string) =>
+    Print.printToFileAsync({
+      html: h,
+      width: 595,
+      height: 842,
+      ...(Platform.OS === 'ios' ? { margins: { left: 54, right: 54, top: 54, bottom: 54 } } : {}),
+    });
+  const bail = await imprimer(htmlBail(r.donnees));
+  const annexe = notice ? await imprimer(notice) : null;
   if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Projet de bail' });
+    await Sharing.shareAsync(bail.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Projet de bail' });
+    if (annexe) await Sharing.shareAsync(annexe.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Notice d’information (annexe C)' });
   }
   return message;
 }

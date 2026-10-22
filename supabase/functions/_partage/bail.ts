@@ -7,6 +7,8 @@
 // source ; le plafond du dépôt vient des paramètres de la règle R-03
 // (table regles_versions), jamais du code.
 
+import { evaluerR04, type BienCheckup, type RegleData } from './moteur.ts';
+
 export type TypeBail = 'nu' | 'meuble' | 'garage';
 
 // ---------------------------------------------------------------------
@@ -313,4 +315,45 @@ export function dernierIrlPublie(indices: IndiceIrl[], dateSignature: string): I
     .filter((i) => i.parution_jo !== null && i.parution_jo <= dateSignature)
     .sort((a, b) => b.annee - a.annee || b.trimestre - a.trimestre);
   return publies[0] ?? null;
+}
+
+// ---------------------------------------------------------------------
+// Avant l'envoi à la signature (relecture du 22/10/2026) : aucun envoi tant
+// qu'une mention obligatoire est « à compléter » ou qu'un diagnostic
+// obligatoire manque ou est périmé (règles R-01 pour le DPE, R-04 pour les autres).
+// ---------------------------------------------------------------------
+
+/** Situations R-04 qui bloquent l'envoi : diagnostics à joindre au bail, absents ou périmés. */
+export const R04_BLOQUANTES = ['crep_absent', 'crep_positif_perime', 'securite_absent', 'securite_perime', 'erp_absent', 'erp_plus_6_mois', 'bruit'];
+
+export type BlocageSignature = { code: string; source: 'R-01' | 'R-04' | 'Bail'; libelle: string };
+
+export function blocagesAvantSignature(args: {
+  aujourdhui: string;
+  bien: BienCheckup;
+  reponses: Record<string, string>;
+  diagnostics: { type: string; date_realisation: string | null; resultat: string | null }[];
+  regleR04: RegleData;
+  /** Titres courts validés des situations R-04 (regles_situations.titre). */
+  titresR04: Record<string, string>;
+  /** Libellés des questions du check-up encore sans réponse. */
+  libelleQuestion: (code: string) => string;
+  mentionsACompleter: string[];
+}): BlocageSignature[] {
+  const blocages: BlocageSignature[] = args.mentionsACompleter.map((m) => ({ code: `mention:${m}`, source: 'Bail', libelle: `À compléter : ${m}` }));
+  if (args.bien.type_bien !== 'garage' && !args.bien.dpe_classe) {
+    blocages.push({ code: 'dpe', source: 'R-01', libelle: 'Diagnostic de performance énergétique à renseigner' });
+  }
+  const r04 = evaluerR04({ aujourdhui: args.aujourdhui, bien: args.bien, reponses: args.reponses, diagnostics: args.diagnostics }, args.regleR04, true);
+  if (r04.statut === 'a_completer') {
+    for (const q of r04.questions) blocages.push({ code: `question:${q}`, source: 'R-04', libelle: `Répondez à la question : ${args.libelleQuestion(q)}` });
+  }
+  if (r04.statut === 'evaluee' || r04.statut === 'a_completer') {
+    for (const c of r04.constats ?? []) {
+      if (R04_BLOQUANTES.includes(c.situation)) {
+        blocages.push({ code: c.situation, source: 'R-04', libelle: args.titresR04[c.situation] ?? c.situation });
+      }
+    }
+  }
+  return blocages;
 }

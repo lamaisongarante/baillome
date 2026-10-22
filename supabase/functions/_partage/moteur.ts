@@ -124,9 +124,9 @@ export function estOutreMer(code: string | null): boolean {
 // Évaluation
 // ---------------------------------------------------------------------
 
-type Ajout = { situation: string; valeurs?: Record<string, string> };
+export type Ajout = { situation: string; valeurs?: Record<string, string> };
 
-type Evaluation =
+export type Evaluation =
   | { statut: 'evaluee'; constats: Ajout[]; echeances?: Omit<Echeance, 'regle'>[] }
   | { statut: 'a_completer'; questions: string[]; constats?: Ajout[]; echeances?: Omit<Echeance, 'regle'>[] }
   | { statut: 'necessite_bail' | 'non_applicable' };
@@ -195,8 +195,12 @@ function evaluerR01(c: Contexte, r: RegleData): Evaluation {
   return { statut: 'evaluee', constats, echeances };
 }
 
-/** R-04 · Diagnostics annexés au bail. Le DPE est traité par R-01. */
-function evaluerR04(c: Contexte, r: RegleData): Evaluation {
+/**
+ * R-04 · Diagnostics annexés au bail. Le DPE est traité par R-01.
+ * `nouveauBail` : contrôle avant la signature d'un bail (l'état des risques doit
+ * alors avoir moins de 6 mois, comme pour une location en préparation).
+ */
+export function evaluerR04(c: Pick<Contexte, 'aujourdhui' | 'bien' | 'reponses' | 'diagnostics'>, r: RegleData, nouveauBail = false): Evaluation {
   const b = c.bien;
   const rep = c.reponses;
   const ansSecurite = param<number>(r, 'validite_electricite_gaz_ans');
@@ -263,7 +267,7 @@ function evaluerR04(c: Contexte, r: RegleData): Evaluation {
   else if (risques === 'oui' || risques === 'nsp') {
     const erp = dernier('erp');
     if (!erp) constats.push({ situation: 'erp_absent' });
-    else if (b.situation_locative === 'pas_encore_loue' && ajouterMois(erp.date_realisation!, moisErp) <= c.aujourdhui) {
+    else if ((nouveauBail || b.situation_locative === 'pas_encore_loue') && ajouterMois(erp.date_realisation!, moisErp) <= c.aujourdhui) {
       // « Nouveau bail » : en l'absence de bail, une location en préparation.
       constats.push({ situation: 'erp_plus_6_mois' });
     }

@@ -41,7 +41,7 @@ export function htmlNotice(fichier: string): string {
   const sommaire = suite.slice(0, debutTexte);
   const texte = suite.slice(debutTexte);
 
-  const corps: string[] = [`<div class="saut"></div><div class="cartouche"><div>
+  const corps: string[] = [`<div class="cartouche"><div>
 <div class="mono sur-titre">ANNEXE C · NOTICE D’INFORMATION · ARRÊTÉ DU 29 MAI 2015</div>
 <h1>${html(titre)}</h1></div></div>`];
   corps.push(`<div class="encadre">${sommaire.map((s) => `<p>${html(s)}</p>`).join('')}</div>`);

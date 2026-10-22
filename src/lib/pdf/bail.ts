@@ -700,10 +700,15 @@ export function htmlBail(d: DonneesBail): string {
 <div class="mono loi">${sousTitre.html}</div></div>`);
 
   const visibles = suite.filter((x) => x.rendu !== 'omise');
-  // Préambule du contrat type : texte officiel reproduit en petit, à la fin du bail.
+  // Préambule du contrat type : texte officiel reproduit en petit, sous le bloc titre, sur deux colonnes.
   const debutParties = visibles.findIndex((l) => /^I\.\s/.test(l.source));
   const preambule = visibles.slice(0, debutParties);
   const contenu = visibles.slice(debutParties);
+  if (preambule.length) {
+    corps.push(`<div class="preambule"><div class="mono etiquette">PRÉAMBULE DU CONTRAT TYPE (TEXTE OFFICIEL)</div><div class="colonnes">${preambule
+      .map((p) => `<p${p.source.startsWith('-') ? ' class="tiret"' : ''}>${p.html}</p>`)
+      .join('')}</div></div>`);
+  }
 
   let encadreDpe: string[] | null = null;
   // II. A : caractéristiques du logement en deux colonnes (maquette), les plus longues sur toute la largeur.
@@ -738,22 +743,19 @@ export function htmlBail(d: DonneesBail): string {
       continue;
     }
     if (/^Le \[date\]/.test(s)) {
-      corps.push(`<p>${remplacer(s, ['……………… (date de la signature électronique)', d.bail.lieu_signature?.trim() || 'à compléter'])}</p>`);
+      corps.push(`<p>${remplacer(s, ['……………… (date de la signature électronique)', d.bail.lieu_signature?.trim() || '……………… (lieu de signature à indiquer)'])}</p>`);
       continue;
     }
     if (/^Signature du bailleur/.test(s)) {
       corps.push(signatures(d));
-      if (preambule.length) {
-        corps.push(`<div class="preambule"><div class="mono etiquette">PRÉAMBULE DU CONTRAT TYPE (TEXTE OFFICIEL)</div>${preambule
-          .map((p) => `<p${p.source.startsWith('-') ? ' class="tiret"' : ''}>${p.html}</p>`)
-          .join('')}</div>`);
-      }
       continue;
     }
     if (/^\(\d+\)\s/.test(s)) {
-      // Notes de bas de page : un paragraphe officiel, présenté note par note.
-      const notes = s.split(/\s(?=\(\d+\)\s)/);
-      corps.push(`<div class="notes">${notes.map((n) => `<p>${html(n)}</p>`).join('')}</div>`);
+      // Notes de bas de page : un paragraphe officiel, présenté note par note. Seules
+      // les notes appelées dans le texte retenu sont imprimées, avec leur numéro officiel.
+      const appelees = new Set([...corps.join(' ').replace(/<[^>]+>/g, ' ').matchAll(/\((\d{1,2})\)/g)].map((m) => m[1]));
+      const notes = s.split(/\s(?=\(\d+\)\s)/).filter((n) => appelees.has(n.match(/^\((\d+)\)/)![1]));
+      if (notes.length) corps.push(`<div class="notes">${notes.map((n) => `<p>${html(n)}</p>`).join('')}</div>`);
       continue;
     }
     const n = niveau(s);
@@ -777,7 +779,9 @@ export function htmlBail(d: DonneesBail): string {
     }
     if (s.startsWith('C. Une notice d’information') || s.startsWith("C. Une notice d'information")) {
       corps.push(
-        `<div class="joints"><span class="mono etiquette">DOCUMENT JOINT</span> ${d.fichierNotice ? 'notice d’information reproduite ci-après' : 'notice à joindre'}</div>`,
+        `<div class="joints"><span class="mono etiquette">DOCUMENT JOINT</span> ${
+          d.fichierNotice ? 'notice d’information, document séparé du même dossier de signature' : 'notice à joindre'
+        }</div>`,
       );
     }
   }
@@ -790,7 +794,19 @@ export function htmlBail(d: DonneesBail): string {
       ? '<span class="projet">PROJET À RELIRE · NON SIGNÉ</span> · CLAUSES PROPRES À BAILLOME À VALIDER PAR L’AVOCAT'
       : `SIGNATURE ÉLECTRONIQUE ${d.bail.niveau_signature === 'qualifiee' ? 'QUALIFIÉE' : 'AVANCÉE'}`,
     piedDroite: '<span class="champ">champ</span> rempli par Baillome',
-    corps: corps.join('\n') + (d.fichierNotice ? htmlNotice(d.fichierNotice) : ''),
+    corps: corps.join('\n'),
+  });
+}
+
+/** Notice d'information (annexe C du bail), en document séparé du même dossier de signature. */
+export function htmlNoticeBail(d: DonneesBail): string | null {
+  if (!d.fichierNotice) return null;
+  return page({
+    titre: 'Notice d’information',
+    reference: `BIEN N° ${String(d.bien.numero).padStart(2, '0')} · ANNEXE C DU CONTRAT DE LOCATION · NOTICE D’INFORMATION`,
+    piedGauche: 'ANNEXE C · ARRÊTÉ DU 29 MAI 2015 · TEXTE OFFICIEL REPRODUIT SANS MODIFICATION',
+    piedDroite: '',
+    corps: htmlNotice(d.fichierNotice),
   });
 }
 

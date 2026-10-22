@@ -158,3 +158,30 @@ test('R-09 : réponse « zone tendue » comparée à la liste officielle applica
   // Aucune liste stockée pour la date : pas d'avertissement (on ne devine pas).
   assert.equal(ecart(true, null), false);
 });
+
+test('avant signature : état des risques absent à La Valette-du-Var → envoi bloqué (R-04)', async () => {
+  const { blocagesAvantSignature } = await import('../../supabase/functions/_partage/bail.ts');
+  const v = (await db.query(`select version, date_effet::text, valable_jusqu_au::text, parametres, source from regles_versions where regle_code = 'R-04'`)).rows[0];
+  const titres = Object.fromEntries((await db.query(`select code, titre from regles_situations where regle_code = 'R-04'`)).rows.map((r) => [r.code, r.titre]));
+  const regleR04 = { code: 'R-04', titre: 'Diagnostics', validee: true, version: v };
+  const bien = {
+    id: 'b', type_bien: 'appartement', situation_locative: 'loue_vide', type_location: 'nue', code_insee: '83144', identifiant_fiscal: '831440000749',
+    type_habitat: 'collectif', regime_juridique: 'copropriete', periode_construction: '1975_1989', hauteur_sous_plafond: null, surface_piece_principale: null,
+    decence_chauffage: null, decence_cuisine: null, decence_wc: null, decence_salle_eau: null, dpe_classe: 'D', dpe_date: '2022-03-12', chauffage_energie: null,
+  };
+  const reponses = { electricite_plus_15_ans: 'non', gaz: 'aucun', permis_avant_1997: 'non', zone_bruit: 'non', commune_risques: 'oui' };
+  const args = (diagnostics, autres = {}) => ({
+    aujourdhui: '2026-10-22', bien, reponses, diagnostics, regleR04, titresR04: titres, libelleQuestion: (q) => q, mentionsACompleter: [], ...autres,
+  });
+  // Sans état des risques : bloqué, avec le titre validé.
+  assert.deepEqual(blocagesAvantSignature(args([])).map((b) => [b.code, b.libelle]), [['erp_absent', 'État des risques manquant']]);
+  // État des risques de plus de 6 mois pour un nouveau bail : bloqué.
+  assert.deepEqual(blocagesAvantSignature(args([{ type: 'erp', date_realisation: '2026-01-15', resultat: null }])).map((b) => b.code), ['erp_plus_6_mois']);
+  // État des risques récent : rien ne bloque.
+  assert.deepEqual(blocagesAvantSignature(args([{ type: 'erp', date_realisation: '2026-09-01', resultat: null }])), []);
+  // Mention du bail à compléter : bloquée aussi.
+  assert.deepEqual(
+    blocagesAvantSignature(args([{ type: 'erp', date_realisation: '2026-09-01', resultat: null }], { mentionsACompleter: ['Lieu de signature'] })).map((b) => b.libelle),
+    ['À compléter : Lieu de signature'],
+  );
+});
