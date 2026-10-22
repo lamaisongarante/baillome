@@ -78,7 +78,7 @@ export default function Compte() {
 
   function confirmerSuppression() {
     Alert.alert(
-      'Supprimer votre compte ?',
+      'Supprimer votre compte ?',
       'Vos biens, vos documents et tous les fichiers de votre coffre seront définitivement effacés. Pensez à exporter vos données avant.',
       [
         { text: 'Annuler', style: 'cancel' },

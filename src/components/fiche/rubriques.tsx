@@ -55,7 +55,7 @@ function lireDateFacultative(texte: string, setErreur: (m: string) => void, nom:
   if (!texte.trim()) return null;
   const iso = lireDateFrancaise(texte);
   if (!iso) {
-    setErreur(`${nom} : utilisez le format JJ/MM/AAAA.`);
+    setErreur(`${nom} : utilisez le format JJ/MM/AAAA.`);
     return undefined;
   }
   if (passeeSeulement && estDansLeFutur(iso)) {
@@ -151,7 +151,7 @@ export function RubriqueIdentite({ fiche, onEnregistre }: PropsRubrique) {
         aide="Il commence par le numéro du département."
       />
       <Pressable onPress={() => setAideFiscal(!aideFiscal)} accessibilityRole="button">
-        <Text style={styles.lien}>Où le trouver ? {aideFiscal ? '↑' : '→'}</Text>
+        <Text style={styles.lien}>Où le trouver ? {aideFiscal ? '↑' : '→'}</Text>
       </Pressable>
       {aideFiscal ? (
         <MessageInfo>

@@ -81,7 +81,7 @@ export default function EcranEntite() {
     if (biens.length > 0) {
       return setErreur('Rattachez d’abord ses biens à une autre entité (fiche du bien, rubrique Identité).');
     }
-    Alert.alert('Supprimer cette entité ?', `« ${nom} » sera retirée de votre compte.`, [
+    Alert.alert('Supprimer cette entité ?', `« ${nom} » sera retirée de votre compte.`, [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Supprimer',

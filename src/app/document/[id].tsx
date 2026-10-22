@@ -68,7 +68,7 @@ export default function DocumentDuCoffre() {
 
   function confirmerSuppression() {
     if (!doc) return;
-    Alert.alert('Supprimer ce document ?', 'Le document et son fichier seront définitivement effacés du coffre.', [
+    Alert.alert('Supprimer ce document ?', 'Le document et son fichier seront définitivement effacés du coffre.', [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Supprimer',

@@ -147,7 +147,7 @@ export default function NouveauBien() {
               <GrilleChoix options={TYPES} valeur={type} onChange={setType} libelleGroupe="Type de bien" />
 
               <ChampAdresse adresse={adresse} onChange={setAdresse} />
-              {adresse ? <MessageInfo>Commune reconnue : {adresse.commune} (code Insee {adresse.codeInsee}).</MessageInfo> : null}
+              {adresse ? <MessageInfo>Commune reconnue : {adresse.commune} (code Insee {adresse.codeInsee}).</MessageInfo> : null}
 
               {!estUnGarage ? (
                 <>
@@ -182,12 +182,12 @@ export default function NouveauBien() {
                           setDateDpe('');
                         }}
                         accessibilityRole="button">
-                        <Text style={styles.lienDpe}>{sansDpe ? 'J’ai un DPE' : 'Pas de DPE ?'}</Text>
+                        <Text style={styles.lienDpe}>{sansDpe ? 'J’ai un DPE' : 'Pas de DPE ?'}</Text>
                       </Pressable>
                     </View>
                     {sansDpe ? (
                       <MessageInfo>
-                        Pas de souci : vous pourrez l’ajouter plus tard. Votre check-up vous indiquera la marche
+                        Pas de souci : vous pourrez l’ajouter plus tard. Votre check-up vous indiquera la marche
                         à suivre.
                       </MessageInfo>
                     ) : (
@@ -208,7 +208,7 @@ export default function NouveauBien() {
               ) : null}
 
               <View style={styles.bloc}>
-                <Text style={styles.libelle}>IL EST LOUÉ ACTUELLEMENT ?</Text>
+                <Text style={styles.libelle}>IL EST LOUÉ ACTUELLEMENT ?</Text>
                 <PilulesChoix
                   options={SITUATIONS}
                   valeur={situation}
@@ -221,7 +221,7 @@ export default function NouveauBien() {
               <View style={styles.espace} />
               <BoutonPrincipal libelle="Continuer" onPress={enregistrer} occupe={occupe} />
               {dansLeParcours ? (
-                <Text style={styles.ensuite}>Ensuite : scannez votre bail, on remplit le reste.</Text>
+                <Text style={styles.ensuite}>Ensuite : scannez votre bail, on remplit le reste.</Text>
               ) : null}
             </>
           )}

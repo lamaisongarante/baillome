@@ -132,7 +132,7 @@ export default function Inscription() {
           ) : (
             <BoutonPrincipal libelle="Créer mon compte" onPress={creerCompte} occupe={occupe} />
           )}
-          <Text style={styles.ensuite}>Ensuite : votre premier bien, en une page.</Text>
+          <Text style={styles.ensuite}>Ensuite : votre premier bien, en une page.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

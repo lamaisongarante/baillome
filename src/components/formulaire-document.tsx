@@ -36,10 +36,10 @@ export function lireValeurs(v: ValeursDocument):
   if (!v.type) return { erreur: 'Choisissez le type de document.' };
   if (!v.titre.trim()) return { erreur: 'Donnez un nom au document.' };
   const dateDocument = v.dateDocument.trim() ? lireDateFrancaise(v.dateDocument) : null;
-  if (v.dateDocument.trim() && !dateDocument) return { erreur: 'Date du document : utilisez le format JJ/MM/AAAA.' };
+  if (v.dateDocument.trim() && !dateDocument) return { erreur: 'Date du document : utilisez le format JJ/MM/AAAA.' };
   if (dateDocument && estDansLeFutur(dateDocument)) return { erreur: 'La date du document ne peut pas être dans le futur.' };
   const dateValidite = v.dateValidite.trim() ? lireDateFrancaise(v.dateValidite) : null;
-  if (v.dateValidite.trim() && !dateValidite) return { erreur: 'Fin de validité : utilisez le format JJ/MM/AAAA.' };
+  if (v.dateValidite.trim() && !dateValidite) return { erreur: 'Fin de validité : utilisez le format JJ/MM/AAAA.' };
   return {
     champs: {
       type_document: v.type,
