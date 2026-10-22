@@ -1,0 +1,127 @@
+// Règles du bail (étape 3) : textes applicables, durées, dépôt, contrôles.
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+import {
+  CONTRATS_TYPES,
+  NOTICES,
+  controlerBail,
+  dureeProposee,
+  plafondDepot,
+  qualitePourDuree,
+  versionApplicable,
+} from '../../supabase/functions/_partage/bail.ts';
+import { creerBase } from '../db/base-de-test.mjs';
+
+// Paramètres R-03 réels, lus dans la base après migrations.
+const db = await creerBase();
+const { rows } = await db.query(`select parametres from regles_versions where regle_code = 'R-03'`);
+const R03 = rows[0].parametres;
+
+const bailType = (champs = {}) => ({
+  type_bail: 'nu',
+  date_effet: '2026-11-01',
+  duree_mois: 36,
+  motif_duree_reduite: null,
+  loyer_hc: 700,
+  mode_charges: 'provisions',
+  periodicite: 'mensuelle',
+  terme: 'a_echoir',
+  depot_garantie: 700,
+  ...champs,
+});
+const contexte = (bail, autres = {}) => ({
+  bail: bailType(bail),
+  bien: { surface_habitable: 48, identifiant_fiscal: '830620000123' },
+  qualite: 'personne_physique',
+  locataires: { nombre: 1, couple: false, tousEtudiants: false },
+  parametresR03: R03,
+  ...autres,
+});
+const codes = (c) => controlerBail(c).map((x) => x.code);
+
+test('textes : contrat type et notice selon la date de signature', () => {
+  assert.equal(versionApplicable(CONTRATS_TYPES.nu, '2026-11-01').fichier, 'contrat-type-nu-2026-10-01.md');
+  assert.equal(versionApplicable(CONTRATS_TYPES.meuble, '2026-10-01').version, '2026-10-01');
+  // Avant le 1er octobre 2026 : ancien contrat type, non stocké.
+  assert.equal(versionApplicable(CONTRATS_TYPES.nu, '2026-09-30'), null);
+  // Notice : nouvelle version à partir du 18 octobre 2026.
+  assert.equal(versionApplicable(NOTICES, '2026-10-18').version, '2026-10-18');
+  assert.equal(versionApplicable(NOTICES, '2026-10-17'), null);
+});
+
+test('durée : 3 ans pour un particulier, une indivision ou une SCI familiale ; 6 ans pour une SCI non familiale', () => {
+  assert.equal(qualitePourDuree({ type: 'nom_propre', sci_familiale: false }), 'personne_physique');
+  assert.equal(qualitePourDuree({ type: 'indivision', sci_familiale: false }), 'personne_physique');
+  assert.equal(qualitePourDuree({ type: 'sci', sci_familiale: true }), 'personne_physique');
+  assert.equal(qualitePourDuree({ type: 'sci', sci_familiale: false }), 'personne_morale');
+  assert.equal(dureeProposee('nu', 'personne_physique', false), 36);
+  assert.equal(dureeProposee('nu', 'personne_morale', false), 72);
+  assert.equal(dureeProposee('meuble', 'personne_physique', false), 12);
+  assert.equal(dureeProposee('meuble', 'personne_physique', true), 9);
+  assert.equal(dureeProposee('garage', 'personne_physique', false), null);
+});
+
+test('R-03 : plafond du dépôt, 1 mois en nu, 2 mois en meublé, aucun pour un garage', () => {
+  assert.equal(plafondDepot('nu', 700, R03), 700);
+  assert.equal(plafondDepot('meuble', 540, R03), 1080);
+  assert.equal(plafondDepot('garage', 95, R03), null);
+});
+
+test('R-03 : dépôt de 2 mois en location vide → bloquant, avec le message validé', () => {
+  const c = controlerBail(contexte({ depot_garantie: 1400 }));
+  const depot = c.find((x) => x.code === 'depot_depasse');
+  assert.equal(depot.niveau, 'bloquant');
+  assert.equal(depot.aValider, false);
+  assert.match(depot.message, /^Petit dépassement repéré/);
+});
+
+test('R-03 : dépôt de 2 mois en meublé → accepté ; au-delà → bloquant', () => {
+  assert.ok(!codes(contexte({ type_bail: 'meuble', duree_mois: 12, loyer_hc: 540, depot_garantie: 1080 })).includes('depot_depasse'));
+  assert.ok(codes(contexte({ type_bail: 'meuble', duree_mois: 12, loyer_hc: 540, depot_garantie: 1080.01 })).includes('depot_depasse'));
+});
+
+test('bail conforme : aucun contrôle', () => {
+  assert.deepEqual(codes(contexte({})), []);
+});
+
+test('identifiant fiscal : 12 chiffres exigés, sauf pour un garage', () => {
+  assert.ok(codes(contexte({}, { bien: { surface_habitable: 48, identifiant_fiscal: null } })).includes('identifiant_fiscal'));
+  assert.ok(codes(contexte({}, { bien: { surface_habitable: 48, identifiant_fiscal: '12345' } })).includes('identifiant_fiscal'));
+  assert.ok(!codes(contexte({ type_bail: 'garage', duree_mois: 12, depot_garantie: 190 }, { bien: { surface_habitable: null, identifiant_fiscal: null } })).length);
+});
+
+test('meublé de 9 mois : réservé aux étudiants (message validé du modèle M-02b)', () => {
+  assert.ok(codes(contexte({ type_bail: 'meuble', duree_mois: 9, loyer_hc: 540, depot_garantie: 540 })).includes('meuble_neuf_mois'));
+  assert.ok(
+    !codes(
+      contexte({ type_bail: 'meuble', duree_mois: 9, loyer_hc: 540, depot_garantie: 540 }, {
+        locataires: { nombre: 1, couple: false, tousEtudiants: true },
+      }),
+    ).length,
+  );
+});
+
+test('location vide : 3 ans minimum ; durée réduite possible seulement avec un motif, pour un particulier, et d’au moins un an', () => {
+  assert.ok(codes(contexte({ duree_mois: 24 })).includes('duree_minimale'));
+  assert.ok(!codes(contexte({ duree_mois: 24, motif_duree_reduite: 'Mutation professionnelle prévue en 2028' })).includes('duree_minimale'));
+  assert.ok(codes(contexte({ duree_mois: 6, motif_duree_reduite: 'Motif' })).includes('duree_minimale'));
+  // SCI non familiale : 6 ans, sans durée réduite.
+  assert.ok(codes(contexte({ duree_mois: 36 }, { qualite: 'personne_morale' })).includes('duree_minimale'));
+  assert.ok(codes(contexte({ duree_mois: 24, motif_duree_reduite: 'Motif' }, { qualite: 'personne_morale' })).includes('duree_minimale'));
+});
+
+test('forfait de charges : interdit en location vide hors colocation, possible en colocation et en meublé', () => {
+  assert.ok(codes(contexte({ mode_charges: 'forfait' })).includes('forfait_nu'));
+  assert.ok(!codes(contexte({ mode_charges: 'forfait' }, { locataires: { nombre: 2, couple: false, tousEtudiants: false } })).includes('forfait_nu'));
+  // Un couple marié ou pacsé n'est pas une colocation.
+  assert.ok(codes(contexte({ mode_charges: 'forfait' }, { locataires: { nombre: 2, couple: true, tousEtudiants: false } })).includes('forfait_nu'));
+  const meuble = controlerBail(contexte({ type_bail: 'meuble', duree_mois: 12, mode_charges: 'forfait', loyer_hc: 540, depot_garantie: 540 }));
+  assert.deepEqual(meuble.map((x) => [x.code, x.niveau]), [['forfait_meuble', 'information']]);
+});
+
+test('loi, art. 22 : pas de dépôt si le loyer est payé d’avance par trimestre', () => {
+  assert.ok(codes(contexte({ periodicite: 'trimestrielle', terme: 'a_echoir' })).includes('depot_paiement_trimestriel'));
+  assert.ok(!codes(contexte({ periodicite: 'trimestrielle', terme: 'echu' })).includes('depot_paiement_trimestriel'));
+  assert.ok(!codes(contexte({ periodicite: 'trimestrielle', terme: 'a_echoir', depot_garantie: null })).includes('depot_paiement_trimestriel'));
+});
