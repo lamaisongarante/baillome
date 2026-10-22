@@ -13,7 +13,7 @@ const SIMULATION_SUPABASE = `
   create role service_role nologin bypassrls;
 
   create schema auth;
-  create table auth.users (id uuid primary key, email text);
+  create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
@@ -48,10 +48,14 @@ export async function creerBase() {
 }
 
 /** Crée un compte, comme le fait Supabase à l'inscription. */
-export async function creerCompte(db, email) {
+export async function creerCompte(db, email, metadonnees = {}) {
   const id = crypto.randomUUID();
   await db.query('reset role');
-  await db.query('insert into auth.users (id, email) values ($1, $2)', [id, email]);
+  await db.query('insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3)', [
+    id,
+    email,
+    metadonnees,
+  ]);
   return id;
 }
 

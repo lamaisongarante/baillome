@@ -20,6 +20,7 @@ export const couleurs = {
   texteMiel: '#6E4700',
   menthe: '#DDF3E4', // en règle
   texteMenthe: '#146B45',
+  texteInfo: '#164A31', // texte des encadrés d'information menthe
   /** Point d'alerte (notification, curseur du score). */
   alerte: '#FF7A59',
 

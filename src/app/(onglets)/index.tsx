@@ -1,12 +1,14 @@
 import { Link, useFocusEffect } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BandeauPin } from '@/components/bandeau-pin';
 import { Icone } from '@/components/icones';
 import { LogoTuile } from '@/components/logo';
+import { useSession } from '@/lib/session';
+import { supabase } from '@/lib/supabase';
 import { arrondis, couleurs, espaces, polices } from '@/theme/tokens';
 
 /**
@@ -15,6 +17,17 @@ import { arrondis, couleurs, espaces, polices } from '@/theme/tokens';
  */
 export default function Accueil() {
   const marges = useSafeAreaInsets();
+  const { session } = useSession();
+  const [prenom, setPrenom] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) return;
+    supabase
+      .from('profils')
+      .select('prenom')
+      .single()
+      .then(({ data }) => setPrenom(data?.prenom ?? null));
+  }, [session]);
 
   // Le bandeau est sombre : heure et batterie en blanc sur cet écran.
   useFocusEffect(
@@ -51,7 +64,7 @@ export default function Accueil() {
           </View>
         </View>
 
-        <Text style={styles.bonjour}>Bonjour</Text>
+        <Text style={styles.bonjour}>{prenom ? `Bonjour ${prenom}` : 'Bonjour'}</Text>
         <Text style={styles.sousTitre}>Voici où en est votre patrimoine.</Text>
       </BandeauPin>
 

@@ -40,6 +40,37 @@ describe('création du compte', () => {
   });
 });
 
+describe('inscription', () => {
+  test('enregistre le prénom et les consentements avec leur version', async () => {
+    const claire = await creerCompte(db, 'claire@exemple.test', {
+      prenom: ' Claire ',
+      consentements: [
+        { document: 'cgu', version: '0.1' },
+        { document: 'confidentialite', version: '0.1' },
+      ],
+    });
+    const profil = await enTantQue(db, claire, 'select prenom from profils');
+    assert.equal(profil.rows[0].prenom, 'Claire');
+    const { rows } = await enTantQue(db, claire, 'select document, version from consentements order by document');
+    assert.deepEqual(rows, [
+      { document: 'cgu', version: '0.1' },
+      { document: 'confidentialite', version: '0.1' },
+    ]);
+  });
+
+  test('sans consentement transmis, le compte est créé et l’application les redemandera', async () => {
+    const { rows } = await enTantQue(db, alice, 'select * from consentements');
+    assert.equal(rows.length, 0);
+  });
+
+  test('un document de consentement inconnu est refusé', async () => {
+    await assert.rejects(
+      creerCompte(db, 'x@exemple.test', { consentements: [{ document: 'autre', version: '1' }] }),
+      /check constraint/,
+    );
+  });
+});
+
 describe('chaque bailleur ne voit que ses données', () => {
   test('Bruno ne voit ni les biens, ni les entités, ni le profil d’Alice', async () => {
     await ajouterBien(alice);

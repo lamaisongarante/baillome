@@ -16,6 +16,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { FournisseurSession, useSession } from '@/lib/session';
 import { couleurs } from '@/theme/tokens';
 
 // L'écran de démarrage reste affiché tant que les polices ne sont pas prêtes.
@@ -34,25 +35,51 @@ export default function RootLayout() {
     IBMPlexMono_600SemiBold,
   });
 
-  useEffect(() => {
-    if (policesChargees || erreur) {
-      SplashScreen.hideAsync();
-    }
-  }, [policesChargees, erreur]);
-
   if (!policesChargees && !erreur) {
     return null;
   }
 
   return (
-    <>
+    <FournisseurSession>
       <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: couleurs.fond },
-        }}
-      />
-    </>
+      <Navigation />
+    </FournisseurSession>
+  );
+}
+
+/**
+ * Aiguillage selon l'état du bailleur :
+ * - non connecté : bienvenue, inscription, connexion ;
+ * - connecté sans les consentements à jour : acceptation des textes ;
+ * - connecté et à jour : l'application.
+ * Les textes juridiques restent consultables dans tous les cas.
+ */
+function Navigation() {
+  const { session, chargement, consentementsAJour } = useSession();
+  const pret = !chargement && (!session || consentementsAJour !== null);
+
+  useEffect(() => {
+    if (pret) SplashScreen.hideAsync();
+  }, [pret]);
+
+  if (!pret) return null;
+
+  const connecte = !!session;
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: couleurs.fond } }}>
+      <Stack.Protected guard={connecte && consentementsAJour === true}>
+        <Stack.Screen name="(onglets)" />
+        <Stack.Screen name="compte" />
+      </Stack.Protected>
+      <Stack.Protected guard={connecte && consentementsAJour === false}>
+        <Stack.Screen name="consentement" />
+      </Stack.Protected>
+      <Stack.Protected guard={!connecte}>
+        <Stack.Screen name="bienvenue" />
+        <Stack.Screen name="inscription" />
+        <Stack.Screen name="connexion" />
+      </Stack.Protected>
+      <Stack.Screen name="juridique/[document]" />
+    </Stack>
   );
 }
