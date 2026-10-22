@@ -14,6 +14,11 @@ const traces = {
   // Hors maquettes : accès au compte, dessiné dans le même style.
   personne: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M4.5 20a7.5 7.5 0 0 1 15 0'],
   retour: ['M15 5l-7 7 7 7'],
+  document: ['M7 3h7l5 5v13H7zM14 3v5h5'],
+  loupe: ['M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z', 'M20 20l-4-4'],
+  scanner: ['M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3', 'M7 12h10'],
+  fleche: ['M5 12h14M13 6l6 6-6 6'],
+  photo: ['M4 8h3l2-3h6l2 3h3v11H4z', 'M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'],
 } as const;
 
 export type NomIcone = keyof typeof traces;

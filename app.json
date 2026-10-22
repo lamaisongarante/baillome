@@ -35,7 +35,14 @@
       "expo-image",
       "expo-status-bar",
       "expo-web-browser",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Baillome accède à vos photos pour ranger vos documents dans le coffre.",
+          "cameraPermission": "Baillome utilise l’appareil photo pour scanner vos documents."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
