@@ -361,9 +361,9 @@ describe('moteur de conformité : données et sécurité', () => {
     assert.equal(msg.affectedRows, 0);
   });
 
-  test('chaque situation a son titre court (formulations du 22/10/2026)', async () => {
+  test('chaque situation a son titre court, sauf R-12 « contraintes » (absent des formulations : l’intitulé s’affiche)', async () => {
     const { rows } = await enTantQue(db, alice, 'select regle_code, code from regles_situations where titre is null');
-    assert.deepEqual(rows, []);
+    assert.deepEqual(rows, [{ regle_code: 'R-12', code: 'contraintes_travaux' }]);
   });
 
   test('R-01 à R-04 validées, R-05 à R-12 et le score non validés', async () => {

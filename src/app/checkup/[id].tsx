@@ -27,22 +27,22 @@ export default function QuestionnaireCheckup() {
   const [loiVisible, setLoiVisible] = useState(false);
 
   /** Interroge le moteur : questions restantes, ou fin du questionnaire (on passe au résultat). */
-  const prochainesQuestions = useCallback(async (): Promise<string[] | null> => {
+  const prochainesQuestions = useCallback(async (): Promise<{ questions: string[]; apercu: boolean } | null> => {
     const r = await lancerCheckup(id);
-    setApercu(r.apercu);
     const b = r.biens[0];
     const q = b && !b.horsV1 ? questionsRestantes(b) : [];
     if (q.length === 0) {
       router.replace(`/checkup/resultat/${id}`);
       return null;
     }
-    return q;
+    return { questions: q, apercu: r.apercu };
   }, [id]);
 
   const recalculer = useCallback(async () => {
-    const q = await prochainesQuestions();
-    if (q) {
-      setRestantes(q);
+    const r = await prochainesQuestions();
+    if (r) {
+      setRestantes(r.questions);
+      setApercu(r.apercu);
       setValeur('');
     }
   }, [prochainesQuestions]);
@@ -59,7 +59,11 @@ export default function QuestionnaireCheckup() {
         setEntete(`BIEN N° ${String(data.numero).padStart(2, '0')} · ${type}${data.commune ? ` ${data.commune}` : ''}`.toUpperCase());
       });
     prochainesQuestions()
-      .then((q) => q && setRestantes(q))
+      .then((r) => {
+        if (!r) return;
+        setRestantes(r.questions);
+        setApercu(r.apercu);
+      })
       .catch(() => setErreur('Le check-up n’a pas pu démarrer. Vérifiez votre connexion et réessayez.'));
   }, [id, prochainesQuestions]);
 
