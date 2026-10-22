@@ -176,6 +176,14 @@ function CarteLocataires({ bienId, occupation }: { bienId: string; occupation: O
           <Icone nom="chevron" couleur={couleurs.pin} taille={16} epaisseur={2} />
         </Pressable>
       ))}
+      <Pressable
+        onPress={() => router.push(`/bail/${bail.id}` as Href)}
+        style={({ pressed }) => [styles.ligneLocataire, pressed && styles.appuye]}
+        accessibilityRole="button">
+        <Icone nom="document" couleur={couleurs.pin} taille={18} epaisseur={1.9} />
+        <Text style={styles.nomLocataire}>Conditions du bail</Text>
+        <Icone nom="chevron" couleur={couleurs.pin} taille={16} epaisseur={2} />
+      </Pressable>
       {bail.type_bail !== 'garage' ? (
         <Pressable onPress={ajouter} style={styles.lienAjout} accessibilityRole="button">
           <Text style={styles.lienAjoutTexte}>+ Ajouter un locataire à ce bail</Text>

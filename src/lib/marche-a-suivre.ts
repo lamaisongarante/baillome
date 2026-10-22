@@ -92,6 +92,19 @@ export function boutons(bien: string, regle: string, situation: string, valeurs?
         diagnostic,
         rangerDiagnostic,
       ];
+    case 'R-03/depot_depasse':
+      return [
+        {
+          libelle: 'Corriger le dépôt de garantie',
+          etape: 'Dans la fiche du bien, ouvrez « Conditions du bail » et indiquez le montant du dépôt après remboursement.',
+          cible: { route: `/bien/${bien}` as Href },
+        },
+        {
+          libelle: 'Ranger la preuve dans le coffre',
+          etape: 'Rangez la preuve du remboursement au locataire dans le coffre du bien.',
+          cible: coffre(bien, 'divers'),
+        },
+      ];
     case 'R-05/identifiant_fiscal':
       return [
         {

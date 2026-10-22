@@ -121,6 +121,16 @@ export default function EcranLocataire() {
           </Text>
         ) : null}
 
+        {bail ? (
+          <Pressable
+            onPress={() => router.push(`/bail/${bail.id}` as Href)}
+            style={({ pressed }) => [styles.carte, styles.ligneEntre, pressed && styles.appuye]}
+            accessibilityRole="button">
+            <Text style={styles.carteTitre}>Conditions du bail</Text>
+            <Icone nom="chevron" couleur={couleurs.pin} taille={18} epaisseur={2} />
+          </Pressable>
+        ) : null}
+
         <Text style={[styles.h2, styles.espaceSection]}>Assurance habitation</Text>
         <Pressable
           onPress={() => bien && router.push(`/bien/${bien.id}/assurances` as Href)}
