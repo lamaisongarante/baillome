@@ -77,6 +77,9 @@ function Navigation() {
         <Stack.Screen name="document/nouveau" />
         <Stack.Screen name="document/[id]" />
         <Stack.Screen name="entite/[id]" />
+        <Stack.Screen name="locataire/[id]/index" />
+        <Stack.Screen name="locataire/[id]/modifier" />
+        <Stack.Screen name="garant/[id]" />
         <Stack.Screen name="checkup/[id]" />
         <Stack.Screen name="checkup/resultat/[id]" />
         <Stack.Screen name="checkup/point" />

@@ -16,7 +16,11 @@ const TABLES = [
   'diagnostics',
   'assurances',
   'inventaire_mobilier',
+  'reponses_checkup',
   'personnes',
+  'baux',
+  'baux_locataires',
+  'cautionnements',
   'documents',
 ] as const;
 

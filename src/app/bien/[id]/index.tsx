@@ -1,14 +1,16 @@
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BandeauPin } from '@/components/bandeau-pin';
 import { Icone } from '@/components/icones';
 import { LIBELLES, complements, useFiche } from '@/lib/biens';
+import { chargerOccupation, type Occupation } from '@/lib/locataires';
+import { LIBELLES_TYPE_BAIL, estColocation, nomComplet } from '@/lib/personnes';
 import { pourcentage, rubriques, type CodeRubrique, type EtatRubrique } from '@/lib/completude';
-import { versTexteNombre } from '@/lib/saisie';
+import { versDateFrancaise, versTexteNombre } from '@/lib/saisie';
 import { couleurs, polices } from '@/theme/tokens';
 
 const PRESENTATION: Record<CodeRubrique, { titre: string; detail: string }> = {
@@ -24,13 +26,15 @@ export default function FicheBien() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const marges = useSafeAreaInsets();
   const { fiche, introuvable, recharger } = useFiche(id);
+  const [occupation, setOccupation] = useState<Occupation | null | undefined>(undefined);
 
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle('light');
       recharger();
+      chargerOccupation(id).then(setOccupation);
       return () => setStatusBarStyle('dark');
-    }, [recharger]),
+    }, [recharger, id]),
   );
 
   if (introuvable) {
@@ -89,6 +93,8 @@ export default function FicheBien() {
       </BandeauPin>
 
       <View style={styles.liste}>
+        {occupation !== undefined ? <CarteLocataires bienId={b.id} occupation={occupation} /> : null}
+
         {etats.map((e) => (
           <CarteRubrique key={e.code} etat={e} onPress={() => ouvrir(e.code)} />
         ))}
@@ -131,6 +137,51 @@ export default function FicheBien() {
         <Text style={styles.rythme}>Vous pouvez compléter plus tard, à votre rythme.</Text>
       </View>
     </ScrollView>
+  );
+}
+
+/** Locataires du bail en cours, et accès à leur fiche (maquette 06). */
+function CarteLocataires({ bienId, occupation }: { bienId: string; occupation: Occupation | null }) {
+  const ajouter = () => router.push(`/locataire/nouveau/modifier?bien=${bienId}` as Href);
+  if (!occupation) {
+    return (
+      <Pressable onPress={ajouter} style={({ pressed }) => [styles.carte, pressed && styles.appuye]} accessibilityRole="button">
+        <View style={styles.texteCarte}>
+          <Text style={styles.titreCarte}>Locataire</Text>
+          <Text style={styles.detail}>Ajoutez votre locataire actuel et son garant</Text>
+        </View>
+        <View style={styles.pastilleNeutre}>
+          <Text style={styles.pastilleTexte}>Ajouter</Text>
+        </View>
+      </Pressable>
+    );
+  }
+  const { bail, locataires } = occupation;
+  const coloc = estColocation(locataires.length, bail.locataires_couple);
+  return (
+    <View style={styles.carteLocataires}>
+      <Text style={styles.titreCarte}>{coloc ? 'Colocataires' : locataires.length > 1 ? 'Locataires' : 'Locataire'}</Text>
+      <Text style={styles.detail}>
+        {LIBELLES_TYPE_BAIL[bail.type_bail]}
+        {bail.date_effet ? ` · depuis le ${versDateFrancaise(bail.date_effet)}` : ''}
+      </Text>
+      {locataires.map((l) => (
+        <Pressable
+          key={l.id}
+          onPress={() => router.push(`/locataire/${l.id}` as Href)}
+          style={({ pressed }) => [styles.ligneLocataire, pressed && styles.appuye]}
+          accessibilityRole="button">
+          <Icone nom="locataire" couleur={couleurs.pin} taille={18} epaisseur={1.9} />
+          <Text style={styles.nomLocataire}>{nomComplet(l)}</Text>
+          <Icone nom="chevron" couleur={couleurs.pin} taille={16} epaisseur={2} />
+        </Pressable>
+      ))}
+      {bail.type_bail !== 'garage' ? (
+        <Pressable onPress={ajouter} style={styles.lienAjout} accessibilityRole="button">
+          <Text style={styles.lienAjoutTexte}>+ Ajouter un locataire à ce bail</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -258,5 +309,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scanTexte: { fontFamily: polices.interfaceTresGras, fontSize: 14, color: couleurs.surPin },
+  carteLocataires: { backgroundColor: couleurs.carte, borderRadius: 22, paddingVertical: 16, paddingHorizontal: 18, gap: 4 },
+  ligneLocataire: {
+    marginTop: 6,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+    borderTopColor: couleurs.pointilles,
+  },
+  nomLocataire: { flex: 1, fontFamily: polices.interfaceGras, fontSize: 15, color: couleurs.texte },
+  lienAjout: { paddingTop: 8 },
+  lienAjoutTexte: { fontFamily: polices.interfaceGras, fontSize: 13.5, color: couleurs.pin },
   rythme: { textAlign: 'center', fontFamily: polices.interface, fontSize: 12.5, color: couleurs.texteSecondaire },
 });
