@@ -20,3 +20,24 @@ test('notice d’information en vigueur au 18 octobre 2026 : fichier identique a
     '9aea3396c8a9243be5b0da8736b84f507368a8fecb005e52dd1832d48e9996f5',
   );
 });
+
+for (const [fichier, empreinte] of [
+  ['contrat-type-nu-2026-10-01.md', 'be66dcfd845bf92d8947b0912fd51a7753787181545c93741fadb9910cce3891'],
+  ['contrat-type-meuble-2026-10-01.md', '492f86be8081a192c2219c5047177de17774940071f7416c4826575123a17a67'],
+]) {
+  test(`contrat type en vigueur au 1er octobre 2026 (${fichier}) : fichier identique au texte de Légifrance`, () => {
+    const contenu = readFileSync(new URL(`../contenus/officiels/${fichier}`, import.meta.url));
+    assert.equal(createHash('sha256').update(contenu).digest('hex'), empreinte);
+  });
+}
+
+test('contrats types : les cinq modifications du décret n° 2026-596 sont présentes', () => {
+  for (const fichier of ['contrat-type-nu-2026-10-01.md', 'contrat-type-meuble-2026-10-01.md']) {
+    const texte = readFileSync(new URL(`../contenus/officiels/${fichier}`, import.meta.url), 'utf8');
+    assert.ok(!texte.includes('L. 351-2'), `${fichier} : ancienne référence L. 351-2`);
+    assert.ok(texte.includes('L. 831-1'));
+    assert.equal(texte.match(/numéro de téléphone portable \(facultatif\)/g)?.length, 2);
+    assert.ok(texte.includes('Le cas échéant, Servitude de résidence principale : le logement objet du présent contrat est soumis à l\'obligation prévue à l\'article L. 151-14-1 du code de l\'urbanisme'));
+    assert.ok(texte.includes('La clause de résiliation de plein droit ne produit effet que six semaines après la date d\'un commandement de payer demeuré infructueux.'));
+  }
+});
