@@ -18,7 +18,8 @@ const CLASSES = Object.keys(couleursDpe) as ClasseDpe[];
 export default function QuestionnaireCheckup() {
   const { id, question: seule } = useLocalSearchParams<{ id: string; question?: string }>();
   const [entete, setEntete] = useState('');
-  const [restantes, setRestantes] = useState<string[] | null>(null);
+  // En mise à jour d'une seule réponse, la question est connue d'emblée.
+  const [restantes, setRestantes] = useState<string[] | null>(seule ? [seule] : null);
   const [repondues, setRepondues] = useState(0);
   const [valeur, setValeur] = useState('');
   const [occupe, setOccupe] = useState(false);
@@ -63,7 +64,6 @@ export default function QuestionnaireCheckup() {
       lancerCheckup(id)
         .then((r) => setApercu(r.apercu))
         .catch(() => undefined);
-      setRestantes([seule]);
       return;
     }
     prochainesQuestions()
