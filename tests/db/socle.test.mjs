@@ -330,6 +330,43 @@ describe('coffre (stockage des fichiers)', () => {
   });
 });
 
+describe('moteur de conformité : données et sécurité', () => {
+  test('les réponses au check-up sont privées', async () => {
+    const bien = await ajouterBien(alice);
+    await enTantQue(db, alice, `insert into reponses_checkup (bien_id, question, valeur) values ($1, 'zone_bruit', 'non')`, [bien.id]);
+    assert.equal((await enTantQue(db, bruno, 'select * from reponses_checkup')).rows.length, 0);
+    await assert.rejects(
+      enTantQue(db, bruno, `insert into reponses_checkup (bien_id, question, valeur) values ($1, 'arrete', 'oui')`, [bien.id]),
+      /foreign key/,
+    );
+  });
+
+  test('le bailleur ne peut pas activer lui-même le mode aperçu', async () => {
+    await assert.rejects(
+      enTantQue(db, alice, 'update profils set apercu_regles = true where id = $1', [alice]),
+      /permission denied/,
+    );
+  });
+
+  test('les règles, leurs paramètres et leurs messages sont lisibles mais pas modifiables', async () => {
+    const { rows } = await enTantQue(db, alice, `select code, validee from regles where code in ('R-01', 'R-05', 'SCORE') order by code`);
+    assert.deepEqual(rows, [
+      { code: 'R-01', validee: true },
+      { code: 'R-05', validee: false },
+      { code: 'SCORE', validee: false },
+    ]);
+    const maj = await enTantQue(db, alice, `update regles set validee = true where code = 'R-05'`);
+    assert.equal(maj.affectedRows, 0);
+    const msg = await enTantQue(db, alice, `update regles_situations set message = 'x'`);
+    assert.equal(msg.affectedRows, 0);
+  });
+
+  test('R-01 à R-04 validées, R-05 à R-12 et le score non validés', async () => {
+    const { rows } = await enTantQue(db, alice, 'select code from regles where validee order by code');
+    assert.deepEqual(rows.map((r) => r.code), ['R-01', 'R-02', 'R-03', 'R-04']);
+  });
+});
+
 describe('suppression du compte par le bailleur lui-même', () => {
   test('Alice supprime son compte : tout est effacé, Bruno n’est pas touché', async () => {
     await ajouterBien(alice);

@@ -304,3 +304,53 @@ Note : messages d'information générale, jamais de conseil fiscal personnalisé
 | Critère d'équipement ou de sécurité déclaré non respecté | Important | Un point de décence est à améliorer : [critère]. Votre locataire peut en demander la mise en conformité à tout moment. | Lister les travaux. |
 | Performance énergétique | — | Voir R-01. | — |
 | Contraintes techniques ou patrimoniales empêchant les travaux énergétiques (art. 3 ter) | Conseil | Si des contraintes techniques ou patrimoniales empêchent les travaux, le juge ne peut pas les ordonner. Conservez les justificatifs (attestation d'un professionnel, refus d'autorisation). | Ranger les justificatifs au coffre. |
+
+---
+
+# Compléments du 22 octobre 2026 (réponses aux questions de relecture)
+
+## R-01 · Date du changement de calcul du DPE (point 1)
+
+- Texte : arrêté du 13 août 2025 modifiant le facteur de conversion de l'énergie finale en énergie primaire de l'électricité (publié au Journal officiel le 26 août 2025).
+- Effet : coefficient de l'électricité abaissé de 2,3 à 1,9 **à compter du 1er janvier 2026**, pour les DPE réalisés à partir de cette date.
+- DPE concernés par l'attestation gratuite de l'ADEME : ceux **établis entre le 1er juillet 2021 et le 31 décembre 2025**. Sans attestation, ces DPE restent valables.
+- Donnée datée : `dpe_calcul_electricite` = { date_effet: 2026-01-01, dpe_concernes: 2021-07-01 → 2025-12-31, source: arrêté du 13 août 2025 }.
+- Veille : un nouveau coefficient (1,7) est annoncé au 1er janvier 2027, texte non confirmé : rien n'est codé tant qu'il n'est pas publié.
+
+## R-04 · Nouvelle question amiante (point 3)
+
+« Le permis de construire de l'immeuble a-t-il été délivré avant le 1er juillet 1997 ? » (Oui / Non / Je ne sais pas). « Je ne sais pas » est traité comme « Oui » (dossier à prévoir), pour un immeuble collectif.
+
+## R-07 · Liste détaillée des pièces (décret n° 2015-1437, annexes I et II)
+
+| Catégorie | Candidat (annexe I) | Caution (annexe II) |
+| --- | --- | --- |
+| Identité | Une pièce avec photo en cours de validité : carte d'identité, passeport, permis de conduire, ou titre de séjour pour un candidat étranger | Personne physique : carte d'identité, passeport ou permis de conduire. Personne morale : extrait K bis de moins de trois mois ou statuts, et identité de son représentant |
+| Domicile | **Une seule pièce** : trois dernières quittances ou attestation du précédent bailleur, attestation d'élection de domicile, attestation de l'hébergeant, dernier avis de taxe foncière ou titre de propriété | **Une seule pièce** : dernière quittance, facture d'eau, de gaz ou d'électricité de moins de trois mois, attestation d'assurance logement de moins de trois mois, dernier avis de taxe foncière ou titre de propriété |
+| Activité professionnelle | Une ou plusieurs : contrat de travail ou de stage (ou attestation de l'employeur), extrait K ou K bis, fiche d'immatriculation au registre national des entreprises, certificat Insee, carte professionnelle, toute pièce récente pour les autres professionnels, carte d'étudiant ou certificat de scolarité | Une ou plusieurs : mêmes pièces, sauf la carte d'étudiant |
+| Ressources | Une ou plusieurs : dernier ou avant-dernier avis d'imposition, trois derniers bulletins de salaire, indemnités de stage, deux derniers bilans ou attestation d'un comptable, justificatifs de prestations des trois derniers mois, simulation d'aides au logement, avis de bourse, titre de propriété ou avis de taxe foncière, justificatifs de revenus fonciers, de rentes ou de capitaux mobiliers | Une ou plusieurs : dernier avis d'imposition, titre de propriété ou avis de taxe foncière, trois derniers bulletins de salaire, bilans ou attestation d'un comptable, justificatifs de prestations, justificatifs de revenus fonciers, de rentes ou de capitaux mobiliers |
+
+Les pièces peuvent être des copies, en français ou traduites, avec des montants convertis en euros ; les originaux doivent pouvoir être présentés à la demande du bailleur (décret, article 1er, III). Le texte complet est dans docs/sources (décret n° 2015-1437).
+
+## R-12 · Les 16 critères de décence (décret n° 2002-120, art. 2 à 5)
+
+| Critère | Règle | Source | Dans le check-up |
+| --- | --- | --- | --- |
+| Clos et couvert | Gros œuvre et accès en bon état ; protection contre les eaux de ruissellement, les remontées d'eau et les infiltrations | Décret, art. 2, 1 | Question oui/non, photo conseillée |
+| Infiltrations d'air | Portes, fenêtres et parois suffisamment étanches ; pièces donnant sur des locaux non chauffés fermées ; cheminées munies de trappes | Art. 2, 2 | Question |
+| Dispositifs de retenue | Garde-corps, escaliers, loggias et balcons en état conforme à leur usage | Art. 2, 3 | Question |
+| Matériaux | Matériaux, canalisations et revêtements sans risque manifeste pour la santé et la sécurité | Art. 2, 4 | Question, lien avec les diagnostics plomb et amiante (R-04) |
+| Électricité, gaz, chauffage, eau chaude | Réseaux, branchements et équipements conformes aux normes de sécurité, en bon état d'usage et de fonctionnement | Art. 2, 5 | Question, lien avec les diagnostics électricité et gaz (R-04) |
+| Aération | Ouvertures et ventilation en bon état, renouvellement de l'air et évacuation de l'humidité suffisants | Art. 2, 6 | Question |
+| Éclairement | Pièces principales avec éclairement naturel suffisant et un ouvrant donnant à l'air libre | Art. 2, 7 | Question |
+| Chauffage | Installation permettant un chauffage normal, adaptée au logement | Art. 3, 1 | Fiche du bien |
+| Eau potable | Distribution intérieure avec pression et débit suffisants | Art. 3, 2 | Question |
+| Évacuation des eaux | Eaux ménagères et eaux-vannes évacuées sans refoulement d'odeurs, avec siphon | Art. 3, 3 | Question |
+| Cuisine | Cuisine ou coin cuisine pouvant recevoir un appareil de cuisson, avec évier en eau chaude et froide et évacuation | Art. 3, 4 | Fiche du bien |
+| Sanitaires | WC intérieur, séparé de la cuisine et de la pièce des repas, et douche ou baignoire en eau chaude et froide, garantissant l'intimité ; pour un logement d'une seule pièce, WC extérieur admis s'il est dans le même bâtiment et facilement accessible | Art. 3, 5 | Fiche du bien |
+| Électricité | Éclairage suffisant de toutes les pièces et des accès, fonctionnement des appareils ménagers courants | Art. 3, 6 | Question |
+| Performance énergétique | Classe F minimum depuis le 1er janvier 2025, E au 1er janvier 2028, D au 1er janvier 2034 (France métropolitaine) | Art. 3 bis | Règle R-01 |
+| Surface | Au moins une pièce principale de 9 m² avec 2,20 m sous plafond, ou de 20 m³ | Art. 4 | Calcul à partir de la fiche du bien, bloquant si non respecté |
+| Arrêté | Un logement frappé d'un arrêté de mise en sécurité ou de traitement de l'insalubrité ne peut pas être décent | Art. 5 | Question, bloquant |
+
+Le texte complet est dans docs/sources (décret n° 2002-120).
