@@ -39,7 +39,7 @@ Le présent contrat est conclu entre les soussignés :
 - Qualité du bailleur : ☐ Personne physique ☐ Personne morale → coché selon {{entite.type}}
 - ▸ SI personne morale : la personne morale est une société civile constituée exclusivement entre parents et alliés jusqu'au quatrième degré inclus : ☐ oui ☐ non → {{entite.sci\_familiale}}
 - Le cas échéant, représenté par le mandataire : ☐ oui ☐ non → « non » par défaut dans Baillome
-- ▸ SI mandataire : nom ou raison sociale et adresse du mandataire ainsi que l'activité exercée : {{mandataire.identite}} ; n° et lieu de délivrance de la carte professionnelle : {{mandataire.carte}}
+- ▸ SI mandataire : nom ou raison sociale et adresse du mandataire ainsi que l'activité exercée : {{mandataire.identite}} ; n° et lieu de délivrance de la carte professionnelle : {{mandataire.carte}} ; nom et adresse du garant (garantie financière du mandataire, loi n° 70-9 du 2 janvier 1970) : {{mandataire.garant}}
 
 désigné(s) ci-après le « bailleur »
 
@@ -50,7 +50,6 @@ ET :
 - Adresse e-mail du locataire (facultatif) : {{locataire1.email}}
 - Numéro de téléphone portable du locataire (facultatif) : {{locataire1.telephone}}
 - ▸ SI second locataire : numéro de téléphone portable et adresse e-mail du second locataire (facultatif) : {{locataire2.telephone}}, {{locataire2.email}}
-- ▸ SI garant : nom et adresse du garant : {{garant.nom}}, {{garant.adresse}}
 
 désigné(s) ci-après le « locataire »
 
