@@ -89,10 +89,10 @@ export async function genererEtPartagerBail(bailId: string): Promise<string | nu
   const r = await chargerDonneesBail(bailId);
   if ('impossible' in r) return r.impossible;
   if (Platform.OS === 'web') {
-    // Sur ordinateur (essais), le projet s'ouvre dans un nouvel onglet, prêt à imprimer.
-    const fenetre = window.open('', '_blank');
-    fenetre?.document.write(htmlBail(r.donnees));
-    fenetre?.document.close();
+    // Sur ordinateur (essais uniquement), le projet remplace la page, prêt à imprimer.
+    document.open();
+    document.write(htmlBail(r.donnees));
+    document.close();
     return null;
   }
   const { uri } = await Print.printToFileAsync({ html: htmlBail(r.donnees) });
