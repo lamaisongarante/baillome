@@ -1,7 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BoutonPrincipal, MessageErreur } from '@/components/formulaire';
 import { FormulaireDocument, lireValeurs, VALEURS_VIDES, type ValeursDocument } from '@/components/formulaire-document';
 import { Icone, type NomIcone } from '@/components/icones';
-import { chargerCoffre, deposerFichier, type Coffre } from '@/lib/coffre';
+import { chargerCoffre, deposerFichier, TYPES_DOCUMENT, type Coffre, type TypeDocument } from '@/lib/coffre';
 import { supabase } from '@/lib/supabase';
 import { couleurs, polices } from '@/theme/tokens';
 
@@ -17,6 +17,7 @@ type Fichier = { uri: string; type: string; nom: string; image: boolean; taille:
 
 /** Ranger un document dans le coffre : photo (recadrable), photo existante ou fichier PDF. */
 export default function NouveauDocument() {
+  const params = useLocalSearchParams<{ bien?: string; type?: string }>();
   const [coffre, setCoffre] = useState<Coffre | null>(null);
   const [fichier, setFichier] = useState<Fichier | null>(null);
   const [valeurs, setValeurs] = useState<ValeursDocument>(VALEURS_VIDES);
@@ -27,9 +28,16 @@ export default function NouveauDocument() {
     chargerCoffre().then((c) => {
       setCoffre(c);
       // Par défaut : le seul bien s'il n'y en a qu'un, et l'entité « en nom propre ».
-      setValeurs((v) => ({ ...v, bienId: c.biens.length === 1 ? c.biens[0].id : null, entiteId: c.entites[0]?.id ?? null }));
+      const type = params.type && params.type in TYPES_DOCUMENT ? (params.type as TypeDocument) : null;
+      setValeurs((v) => ({
+        ...v,
+        bienId: params.bien ?? (c.biens.length === 1 ? c.biens[0].id : null),
+        entiteId: c.entites[0]?.id ?? null,
+        type,
+        titre: type ? TYPES_DOCUMENT[type] : v.titre,
+      }));
     });
-  }, []);
+  }, [params.bien, params.type]);
 
   async function photographier() {
     setErreur(null);

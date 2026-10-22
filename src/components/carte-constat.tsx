@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { FAMILLES, LIBELLES_GRAVITE, messageAffiche, type ConstatAffiche } from '@/lib/checkup';
 import { couleurs, ombreUrgente, polices } from '@/theme/tokens';
@@ -11,11 +11,15 @@ const TEINTES = {
 } as const;
 
 /** Carte d'un point à traiter (maquette 03) : gravité, famille, situation, message et action. */
-export function CarteConstat({ constat, rang }: { constat: ConstatAffiche; rang: number }) {
+export function CarteConstat({ constat, rang, onPress }: { constat: ConstatAffiche; rang: number; onPress?: () => void }) {
   const t = TEINTES[constat.gravite];
   const urgent = constat.gravite === 'critique';
   return (
-    <View style={[styles.carte, { backgroundColor: t.fond }, urgent && styles.urgent]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      style={({ pressed }) => [styles.carte, { backgroundColor: t.fond }, urgent && styles.urgent, pressed && styles.appuye]}>
       <View style={styles.ligne}>
         <Text style={[styles.legende, { color: t.texte }]}>
           [{String(rang).padStart(2, '0')}] {LIBELLES_GRAVITE[constat.gravite]}
@@ -28,8 +32,9 @@ export function CarteConstat({ constat, rang }: { constat: ConstatAffiche; rang:
         <Text style={[styles.legende, { color: t.texte }]}>CE QUE VOUS POUVEZ FAIRE</Text>
         <Text style={styles.actionTexte}>{messageAffiche(constat.action, constat.valeurs)}</Text>
       </View>
+      {onPress ? <Text style={styles.suite}>Voir la marche à suivre →</Text> : null}
       {!constat.validee ? <Text style={styles.nonValidee}>RÈGLE NON VALIDÉE · APERÇU</Text> : null}
-    </View>
+    </Pressable>
   );
 }
 
@@ -42,5 +47,7 @@ const styles = StyleSheet.create({
   message: { fontFamily: polices.interface, fontSize: 14, lineHeight: 21, color: couleurs.texteSecondaire },
   action: { marginTop: 4, gap: 3 },
   actionTexte: { fontFamily: polices.interfaceGras, fontSize: 13.5, lineHeight: 19, color: couleurs.texte },
+  appuye: { opacity: 0.85 },
+  suite: { marginTop: 4, fontFamily: polices.interfaceTresGras, fontSize: 14, color: couleurs.texte },
   nonValidee: { fontFamily: polices.technique, fontSize: 9.5, color: couleurs.texteDiscret, marginTop: 4 },
 });

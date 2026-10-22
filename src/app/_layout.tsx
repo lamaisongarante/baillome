@@ -79,6 +79,7 @@ function Navigation() {
         <Stack.Screen name="entite/[id]" />
         <Stack.Screen name="checkup/[id]" />
         <Stack.Screen name="checkup/resultat/[id]" />
+        <Stack.Screen name="checkup/point" />
         <Stack.Screen name="parcours/scan-bail" options={{ gestureEnabled: false }} />
         <Stack.Screen name="parcours/check-up" options={{ gestureEnabled: false }} />
       </Stack.Protected>

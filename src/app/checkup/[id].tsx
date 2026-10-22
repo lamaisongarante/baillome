@@ -16,7 +16,7 @@ const CLASSES = Object.keys(couleursDpe) as ClasseDpe[];
 
 /** Questionnaire du check-up d'un bien, une question par écran (maquette 02). */
 export default function QuestionnaireCheckup() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, question: seule } = useLocalSearchParams<{ id: string; question?: string }>();
   const [entete, setEntete] = useState('');
   const [restantes, setRestantes] = useState<string[] | null>(null);
   const [repondues, setRepondues] = useState(0);
@@ -58,6 +58,14 @@ export default function QuestionnaireCheckup() {
         const type = LIBELLES.type_bien[data.type_bien as keyof typeof LIBELLES.type_bien] ?? 'Bien';
         setEntete(`BIEN N° ${String(data.numero).padStart(2, '0')} · ${type}${data.commune ? ` ${data.commune}` : ''}`.toUpperCase());
       });
+    if (seule) {
+      // Mise à jour d'une seule réponse, depuis la marche à suivre.
+      lancerCheckup(id)
+        .then((r) => setApercu(r.apercu))
+        .catch(() => undefined);
+      setRestantes([seule]);
+      return;
+    }
     prochainesQuestions()
       .then((r) => {
         if (!r) return;
@@ -65,7 +73,7 @@ export default function QuestionnaireCheckup() {
         setApercu(r.apercu);
       })
       .catch(() => setErreur('Le check-up n’a pas pu démarrer. Vérifiez votre connexion et réessayez.'));
-  }, [id, prochainesQuestions]);
+  }, [id, prochainesQuestions, seule]);
 
   const q: Question | undefined = restantes ? question(restantes[0]) : undefined;
   const total = repondues + (restantes?.length ?? 0);
@@ -88,6 +96,7 @@ export default function QuestionnaireCheckup() {
     setOccupe(true);
     try {
       await enregistrerReponse(id, q.code, aEnregistrer);
+      if (seule) return router.back();
       setRepondues((n) => n + 1);
       // Après chaque réponse, le moteur peut avoir besoin d'autres questions (ex. chauffage pour un DPE E, F ou G).
       if (restantes && restantes.length > 1) {

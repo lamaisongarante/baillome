@@ -8,11 +8,14 @@ import { BandeauPin } from '@/components/bandeau-pin';
 import { BoutonAjouterBien, CarteBien, COLONNES_RESUME, type BienResume } from '@/components/carte-bien';
 import { Icone } from '@/components/icones';
 import { LogoTuile } from '@/components/logo';
-import { lancerCheckup, type ResultatCheckup } from '@/lib/checkup';
+import { LIBELLES_GRAVITE, lancerCheckup, messageAffiche, ORDRE_GRAVITE, type ResultatCheckup } from '@/lib/checkup';
 import { versDateFrancaise } from '@/lib/saisie';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { arrondis, couleurs, espaces, ombreUrgente, polices } from '@/theme/tokens';
+
+const FONDS_GRAVITE = { critique: couleurs.corail, important: couleurs.miel, conseil: couleurs.menthe, ok: couleurs.citron } as const;
+const TEXTES_GRAVITE = { critique: couleurs.texteCorail, important: couleurs.texteMiel, conseil: couleurs.texteMenthe, ok: couleurs.pin } as const;
 
 /** Nombre de jours entre aujourd'hui et une date (AAAA-MM-JJ). */
 function joursAvant(date: string, aujourdhui: string) {
@@ -77,6 +80,10 @@ export default function Accueil() {
   );
 
   const constats = (checkup?.biens ?? []).flatMap((b) => b.constats).filter((c) => c.gravite !== 'ok');
+  // Les points les plus importants, tous biens confondus (3 au plus sur l'accueil).
+  const aTraiter = (checkup?.biens ?? [])
+    .flatMap((b) => b.constats.filter((c) => c.gravite !== 'ok').map((c) => ({ ...c, bien_id: b.bien_id, numero: b.numero })))
+    .sort((a, b) => ORDRE_GRAVITE[a.gravite] - ORDRE_GRAVITE[b.gravite] || a.numero - b.numero);
   const totalPoints = constats.length;
   const urgents = constats.filter((c) => c.gravite === 'critique').length;
   // Prochaine échéance : la plus proche à venir, tous biens confondus.
@@ -174,6 +181,42 @@ export default function Accueil() {
               {nomBien(prochaine.bien_id)} · le {versDateFrancaise(prochaine.date)}
             </Text>
           </Pressable>
+        ) : null}
+
+        {aTraiter.length > 0 ? (
+          <>
+            <View style={styles.titreSection}>
+              <Text style={styles.h2} accessibilityRole="header">
+                À traiter
+              </Text>
+              <Text style={styles.compteur}>
+                {aTraiter.length} POINT{aTraiter.length > 1 ? 'S' : ''}
+              </Text>
+            </View>
+            <View style={styles.listePoints}>
+              {aTraiter.slice(0, 3).map((c, i) => (
+                <Pressable
+                  key={`${c.bien_id}-${c.regle}-${c.situation}`}
+                  onPress={() => router.push({ pathname: '/checkup/point', params: { bien: c.bien_id, regle: c.regle, situation: c.situation } })}
+                  style={({ pressed }) => [styles.point, i > 0 && styles.pointSepare, pressed && styles.pointAppuye]}
+                  accessibilityRole="button">
+                  <View style={[styles.pastilleGravite, { backgroundColor: FONDS_GRAVITE[c.gravite] }]}>
+                    <Text style={[styles.pastilleGraviteTexte, { color: TEXTES_GRAVITE[c.gravite] }]}>{LIBELLES_GRAVITE[c.gravite]}</Text>
+                  </View>
+                  <View style={styles.pointTextes}>
+                    <Text style={styles.pointTitre}>{messageAffiche(c.titre ?? c.libelle)}</Text>
+                    <Text style={styles.pointBien}>{nomBien(c.bien_id)}</Text>
+                  </View>
+                  <Icone nom="fleche" couleur={couleurs.pin} taille={16} epaisseur={2.2} />
+                </Pressable>
+              ))}
+            </View>
+            {aTraiter.length > 3 ? (
+              <Text style={styles.plusDePoints}>
+                Et {aTraiter.length - 3} autre{aTraiter.length - 3 > 1 ? 's' : ''} : ouvrez un bien, puis « Voir le dernier résultat ».
+              </Text>
+            ) : null}
+          </>
         ) : null}
 
         <View style={styles.titreSection}>
@@ -313,6 +356,16 @@ const styles = StyleSheet.create({
   joursTexte: { fontFamily: polices.techniqueGras, fontSize: 11, color: couleurs.texteCorail },
   echeanceTitre: { fontFamily: polices.titre, fontSize: 21, letterSpacing: -0.4, lineHeight: 24, color: couleurs.texte },
   echeanceDetail: { fontFamily: polices.interface, fontSize: 13.5, lineHeight: 20, color: couleurs.texteSecondaire },
+  listePoints: { backgroundColor: couleurs.carte, borderRadius: arrondis.tuile, paddingHorizontal: 16 },
+  point: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
+  pointSepare: { borderTopWidth: 1, borderTopColor: couleurs.pointilles, borderStyle: 'dashed' },
+  pointAppuye: { opacity: 0.7 },
+  pastilleGravite: { height: 24, borderRadius: 12, paddingHorizontal: 8, justifyContent: 'center' },
+  pastilleGraviteTexte: { fontFamily: polices.techniqueGras, fontSize: 9.5 },
+  pointTextes: { flex: 1, gap: 2 },
+  pointTitre: { fontFamily: polices.interfaceTresGras, fontSize: 14.5, lineHeight: 19, color: couleurs.texte },
+  pointBien: { fontFamily: polices.interface, fontSize: 12, color: couleurs.texteSecondaire },
+  plusDePoints: { fontFamily: polices.interface, fontSize: 12.5, color: couleurs.texteSecondaire },
   titreSection: {
     flexDirection: 'row',
     alignItems: 'baseline',

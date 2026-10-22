@@ -109,7 +109,12 @@ export default function ResultatCheckupBien() {
               </Text>
             </View>
             {aTraiter.map((c, i) => (
-              <CarteConstat key={`${c.regle}-${c.situation}`} constat={c} rang={i + 1} />
+              <CarteConstat
+                key={`${c.regle}-${c.situation}`}
+                constat={c}
+                rang={i + 1}
+                onPress={() => router.push({ pathname: '/checkup/point', params: { bien: id, regle: c.regle, situation: c.situation } })}
+              />
             ))}
           </>
         ) : null}
