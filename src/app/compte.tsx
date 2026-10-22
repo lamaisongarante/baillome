@@ -4,6 +4,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Champ, MessageErreur, MessageInfo } from '@/components/formulaire';
+import { afficherTelephone, lireTelephone } from '@/lib/personnes';
 import { Icone } from '@/components/icones';
 import { exporterMesDonnees, supprimerMonCompte } from '@/lib/compte';
 import { useSession } from '@/lib/session';
@@ -25,6 +26,8 @@ export default function Compte() {
   const { session } = useSession();
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
+  const [adresse, setAdresse] = useState('');
+  const [telephone, setTelephone] = useState('');
   const [formule, setFormule] = useState<string | null>(null);
   const [entites, setEntites] = useState<Entite[]>([]);
   const [message, setMessage] = useState<string | null>(null);
@@ -35,11 +38,13 @@ export default function Compte() {
     useCallback(() => {
       supabase
         .from('profils')
-        .select('prenom, nom, formules(libelle)')
+        .select('prenom, nom, adresse, telephone, formules(libelle)')
         .single()
         .then(({ data }) => {
           setPrenom(data?.prenom ?? '');
           setNom(data?.nom ?? '');
+          setAdresse(data?.adresse ?? '');
+          setTelephone(afficherTelephone(data?.telephone ?? null));
           setFormule((data?.formules as unknown as { libelle: string } | null)?.libelle ?? null);
         });
       supabase
@@ -53,10 +58,12 @@ export default function Compte() {
   async function enregistrerProfil() {
     setMessage(null);
     setErreur(null);
+    const tel = lireTelephone(telephone);
+    if (tel === undefined) return setErreur('Ce numéro de portable ne semble pas complet. Exemple : 06 12 34 56 78.');
     setOccupe('profil');
     const { error } = await supabase
       .from('profils')
-      .update({ prenom: prenom.trim() || null, nom: nom.trim() || null })
+      .update({ prenom: prenom.trim() || null, nom: nom.trim() || null, adresse: adresse.trim() || null, telephone: tel })
       .eq('id', session?.user.id ?? '');
     setOccupe(null);
     if (error) setErreur('L’enregistrement n’a pas abouti. Vérifiez votre connexion et réessayez.');
@@ -132,6 +139,21 @@ export default function Compte() {
               <Champ libelle="Nom" value={nom} onChangeText={setNom} autoComplete="family-name" />
             </View>
           </View>
+          <Champ
+            libelle="Domicile"
+            value={adresse}
+            onChangeText={setAdresse}
+            autoComplete="street-address"
+            aide="Il figure dans vos baux, comme l’exige le contrat type."
+          />
+          <Champ
+            libelle="Portable (facultatif)"
+            value={telephone}
+            onChangeText={setTelephone}
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            placeholder="06 12 34 56 78"
+          />
           <Pressable onPress={enregistrerProfil} style={styles.boutonSecondaire} accessibilityRole="button" disabled={occupe !== null}>
             <Text style={styles.boutonSecondaireTexte}>{occupe === 'profil' ? 'Enregistrement…' : 'Enregistrer'}</Text>
           </Pressable>

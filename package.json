@@ -19,6 +19,7 @@
     "expo-image": "~57.0.5",
     "expo-image-picker": "~57.0.20",
     "expo-linking": "~57.0.13",
+    "expo-print": "~57.0.2",
     "expo-router": "~57.0.29",
     "expo-sharing": "~57.0.24",
     "expo-splash-screen": "~57.0.10",
@@ -54,7 +55,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test:db": "node --test 'tests/db/**/*.test.mjs'",
-    "textes": "node scripts/generer-textes-juridiques.mjs",
+    "textes": "node scripts/generer-textes-juridiques.mjs && node scripts/generer-textes-officiels.mjs",
     "test": "node --test 'tests/**/*.test.mjs'",
     "verifier": "tsc --noEmit && expo lint && npm test"
   },

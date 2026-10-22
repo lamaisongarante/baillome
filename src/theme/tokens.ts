@@ -47,6 +47,20 @@ export const couleurs = {
 } as const;
 
 /**
+ * Documents imprimables (PDF) : fond blanc, aucun aplat, encadrés au trait
+ * vert pin, jamais de citron (CLAUDE.md). Valeurs des maquettes
+ * design/sources-html (Bail-Editorial). Toujours en clair, même en mode sombre.
+ */
+export const couleursDocuments = {
+  pin: '#0E3B2E',
+  fond: '#FFFFFF',
+  texte: '#1E2B25',
+  secondaire: '#4E5A54',
+  trait: '#C9D3CD',
+  filet: '#D9DED8',
+} as const;
+
+/**
  * Couleurs de l'étiquette énergie du DPE (maquette 14), avec la couleur
  * de la lettre posée dessus. Utilisées uniquement pour le choix de la classe.
  */

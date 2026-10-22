@@ -22,6 +22,7 @@ export default function EcranEntite() {
   const [type, setType] = useState<TypeEntite | 'nom_propre' | null>(null);
   const [nom, setNom] = useState('');
   const [siren, setSiren] = useState('');
+  const [siege, setSiege] = useState('');
   const [familiale, setFamiliale] = useState(false);
   const [biens, setBiens] = useState<BienResume[]>([]);
   const [occupe, setOccupe] = useState(false);
@@ -31,7 +32,7 @@ export default function EcranEntite() {
     if (nouvelle) return;
     supabase
       .from('entites')
-      .select('type, nom, siren, sci_familiale')
+      .select('type, nom, siren, sci_familiale, siege')
       .eq('id', id)
       .single()
       .then(({ data }) => {
@@ -39,6 +40,7 @@ export default function EcranEntite() {
         setType(data.type as TypeEntite | 'nom_propre');
         setNom(data.nom);
         setSiren(data.siren ?? '');
+        setSiege(data.siege ?? '');
         setFamiliale(data.sci_familiale);
       });
     supabase
@@ -62,6 +64,7 @@ export default function EcranEntite() {
       nom: nom.trim(),
       siren: type === 'sci' ? s || null : null,
       sci_familiale: type === 'sci' ? familiale : false,
+      siege: type === 'sci' ? siege.trim() || null : null,
     };
     setOccupe(true);
     const { error } = nouvelle
@@ -133,6 +136,12 @@ export default function EcranEntite() {
                 onChangeText={(t) => setSiren(t.replace(/[^\d\s]/g, ''))}
                 keyboardType="number-pad"
                 maxLength={11}
+              />
+              <Champ
+                libelle="Siège social"
+                value={siege}
+                onChangeText={setSiege}
+                aide="Il figure dans les baux des biens de la SCI, comme l’exige le contrat type."
               />
               <CaseACocher cochee={familiale} onChange={setFamiliale} libelleAccessible="Société civile familiale jusqu’au quatrième degré">
                 Société civile familiale jusqu’au quatrième degré

@@ -23,3 +23,15 @@ for (const [document, t] of Object.entries(textes)) {
 test('les trois documents sont présents', () => {
   assert.deepEqual(Object.keys(textes).sort(), ['cgu', 'confidentialite', 'mentions-legales']);
 });
+
+test('textes officiels du module PDF : identiques aux copies de Légifrance', async () => {
+  const { TEXTES_OFFICIELS } = await import('../src/contenus/textes-officiels.ts');
+  assert.deepEqual(Object.keys(TEXTES_OFFICIELS).sort(), [
+    'contrat-type-meuble-2026-10-01.md',
+    'contrat-type-nu-2026-10-01.md',
+    'notice-information-2026-10-18.md',
+  ]);
+  for (const [fichier, t] of Object.entries(TEXTES_OFFICIELS)) {
+    assert.equal(t.texte, readFileSync(new URL(`../contenus/officiels/${fichier}`, import.meta.url), 'utf8'), fichier);
+  }
+});

@@ -17,6 +17,7 @@ import { PilulesChoix } from '@/components/choix';
 import { BoutonPrincipal, CaseACocher, Champ, MessageErreur, MessageInfo } from '@/components/formulaire';
 import { Icone } from '@/components/icones';
 import { chargerDossierBail, enregistrerConditions, type ConditionsBail, type DossierBail } from '@/lib/baux';
+import { genererEtPartagerBail } from '@/lib/pdf/generer-bail';
 import { LIBELLES_TYPE_BAIL, estColocation } from '@/lib/personnes';
 import { formaterDateEnCours, lireDateFrancaise, lireEntier, lireNombre, versDateFrancaise, versTexteNombre } from '@/lib/saisie';
 import { supabase } from '@/lib/supabase';
@@ -52,6 +53,8 @@ export default function EcranBail() {
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enregistre, setEnregistre] = useState(false);
+  const [generation, setGeneration] = useState(false);
+  const [messageGeneration, setMessageGeneration] = useState<string | null>(null);
 
   useEffect(() => {
     chargerDossierBail(id).then((d) => {
@@ -148,6 +151,22 @@ export default function EcranBail() {
     setOccupe(false);
     if (!ok || !okBien) return setErreur('L’enregistrement n’a pas abouti. Vérifiez votre connexion et réessayez.');
     setEnregistre(true);
+  }
+
+  async function generer() {
+    setMessageGeneration(null);
+    setErreur(null);
+    // On enregistre d'abord, pour que le PDF reprenne exactement ce qui est affiché.
+    await enregistrer();
+    if (courant?.erreurs.length) return;
+    setGeneration(true);
+    try {
+      setMessageGeneration(await genererEtPartagerBail(id));
+    } catch {
+      setErreur('Le PDF n’a pas pu être créé. Réessayez dans un instant.');
+    } finally {
+      setGeneration(false);
+    }
   }
 
   const revenir = () => (router.canGoBack() ? router.back() : router.replace(`/bien/${dossier.bien.id}` as Href));
@@ -452,6 +471,23 @@ export default function EcranBail() {
           <MessageErreur message={erreur} />
           {enregistre ? <MessageInfo>Conditions enregistrées.</MessageInfo> : null}
           <BoutonPrincipal libelle="Enregistrer" onPress={enregistrer} occupe={occupe} />
+          {habitation ? (
+            <>
+              <Pressable
+                onPress={generer}
+                disabled={generation}
+                style={({ pressed }) => [styles.boutonPdf, pressed && styles.appuye]}
+                accessibilityRole="button">
+                <Icone nom="document" couleur={couleurs.pin} taille={18} epaisseur={1.9} />
+                <Text style={styles.boutonPdfTexte}>{generation ? 'Création du PDF…' : 'Générer le projet de bail (PDF)'}</Text>
+              </Pressable>
+              <Text style={styles.aide}>
+                Projet à relire, non signé : le texte officiel du contrat type et la notice d’information, remplis avec vos données.
+                {controles.some((c) => c.niveau === 'bloquant') ? ' Les points « à corriger » apparaîtront « à compléter » dans le projet.' : ''}
+              </Text>
+              {messageGeneration ? <MessageInfo>{messageGeneration}</MessageInfo> : null}
+            </>
+          ) : null}
           <View style={styles.bas} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -557,5 +593,17 @@ const styles = StyleSheet.create({
   controle: { borderRadius: 20, padding: 14, gap: 6 },
   niveau: { fontFamily: polices.techniqueGras, fontSize: 10.5, letterSpacing: 0.5 },
   controleTexte: { fontFamily: polices.interface, fontSize: 13.5, lineHeight: 19, color: couleurs.texte },
+  boutonPdf: {
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    borderColor: couleurs.pin,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  boutonPdfTexte: { fontFamily: polices.interfaceGras, fontSize: 15, color: couleurs.pin },
+  appuye: { opacity: 0.85 },
   bas: { height: 24 },
 });
