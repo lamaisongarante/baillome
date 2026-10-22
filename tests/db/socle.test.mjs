@@ -267,6 +267,36 @@ describe('données de référence', () => {
     assert.ok(rows.every((r, i) => r.ordre === i + 1 && r.source.startsWith('Décret n° 2015-981')));
   });
 
+  test('R-09 : les 1 430 communes de l’annexe, 1°, du décret n° 2026-831, en vigueur au 1er janvier 2027', async () => {
+    const { rows } = await enTantQue(
+      db,
+      alice,
+      `select count(*)::int as n, min(date_entree_vigueur)::text as debut, max(date_entree_vigueur)::text as fin,
+              count(distinct agglomeration)::int as agglos
+         from communes_zone_tendue where source like 'Décret n° 2026-831%'`,
+    );
+    assert.deepEqual(rows[0], { n: 1430, debut: '2027-01-01', fin: '2027-01-01', agglos: 47 });
+  });
+
+  for (const [code, commune] of [
+    ['83144', 'La Valette-du-Var'],
+    ['83062', 'La Garde'],
+    ['83137', 'Toulon'],
+    ['75056', 'Paris'],
+    ['2A004', 'Ajaccio'],
+    ['97411', 'Saint-Denis'],
+  ]) {
+    test(`R-09 : ${commune} (${code}) figure dans la liste`, async () => {
+      const { rows } = await enTantQue(db, alice, 'select commune from communes_zone_tendue where code_insee = $1', [code]);
+      assert.deepEqual(rows, [{ commune }]);
+    });
+  }
+
+  test('R-09 : une commune hors liste n’y figure pas (Draguignan oui, Brignoles non)', async () => {
+    const { rows } = await enTantQue(db, alice, `select code_insee from communes_zone_tendue where code_insee in ('83050', '83023')`);
+    assert.deepEqual(rows, [{ code_insee: '83050' }]);
+  });
+
   test('la liste des communes en zone tendue n’est pas modifiable depuis l’application', async () => {
     await assert.rejects(
       enTantQue(
