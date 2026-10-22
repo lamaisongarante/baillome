@@ -70,6 +70,11 @@ function Navigation() {
       <Stack.Protected guard={connecte && consentementsAJour === true}>
         <Stack.Screen name="(onglets)" />
         <Stack.Screen name="compte" />
+        <Stack.Screen name="formules" />
+        <Stack.Screen name="bien/nouveau" />
+        <Stack.Screen name="bien/[id]" />
+        <Stack.Screen name="parcours/scan-bail" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="parcours/check-up" options={{ gestureEnabled: false }} />
       </Stack.Protected>
       <Stack.Protected guard={connecte && consentementsAJour === false}>
         <Stack.Screen name="consentement" />

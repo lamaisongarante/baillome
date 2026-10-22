@@ -41,7 +41,24 @@ export const couleurs = {
   piste: '#EDF1EE', // jauge sur carte blanche
   pointilles: '#C5D3CB',
   pointillesFort: '#7FA596',
+  bordureChoix: '#9DB3A9', // pilules de choix non sélectionnées
 } as const;
+
+/**
+ * Couleurs de l'étiquette énergie du DPE (maquette 14), avec la couleur
+ * de la lettre posée dessus. Utilisées uniquement pour le choix de la classe.
+ */
+export const couleursDpe = {
+  A: { fond: '#009A44', texte: '#FFFFFF' },
+  B: { fond: '#4FB848', texte: '#FFFFFF' },
+  C: { fond: '#B5D334', texte: '#1E1E1E' },
+  D: { fond: '#FFEE00', texte: '#1E1E1E' },
+  E: { fond: '#F6B500', texte: '#1E1E1E' },
+  F: { fond: '#E8622A', texte: '#FFFFFF' },
+  G: { fond: '#D21F25', texte: '#FFFFFF' },
+} as const;
+
+export type ClasseDpe = keyof typeof couleursDpe;
 
 /** Noms des polices, tels que chargés dans src/app/_layout.tsx. */
 export const polices = {
@@ -75,7 +92,7 @@ export const espaces = {
   xl: 32,
 } as const;
 
-/** Ombre décalée de 5 px, réservée à l'élément urgent. */
+/** Ombre décalée de 5 px : élément urgent (accueil) ou mis en avant (formule conseillée). */
 export const ombreUrgente = {
   boxShadow: `5px 5px 0px ${couleurs.pin}`,
 } as const;

@@ -17,6 +17,9 @@ type EtatSession = {
   /** null tant que la vérification n'est pas faite. */
   consentementsAJour: boolean | null;
   verifierConsentements: () => Promise<void>;
+  /** Vrai juste après l'inscription : l'accueil enchaîne sur le premier bien. */
+  parcoursEnAttente: boolean;
+  setParcoursEnAttente: (v: boolean) => void;
 };
 
 /** Le bailleur a-t-il accepté la version en vigueur de chaque texte ? */
@@ -34,6 +37,7 @@ const ContexteSession = createContext<EtatSession | null>(null);
 export function FournisseurSession({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [chargement, setChargement] = useState(true);
+  const [parcoursEnAttente, setParcoursEnAttente] = useState(false);
   // Résultat de la vérification, rattaché au compte vérifié.
   const [verification, setVerification] = useState<{ idUtilisateur: string; aJour: boolean } | null>(null);
 
@@ -70,7 +74,14 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
     idUtilisateur && verification?.idUtilisateur === idUtilisateur ? verification.aJour : null;
 
   return (
-    <ContexteSession.Provider value={{ session, chargement, consentementsAJour, verifierConsentements }}>
+    <ContexteSession.Provider value={{
+        session,
+        chargement,
+        consentementsAJour,
+        verifierConsentements,
+        parcoursEnAttente,
+        setParcoursEnAttente,
+      }}>
       {children}
     </ContexteSession.Provider>
   );

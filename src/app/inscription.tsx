@@ -14,12 +14,13 @@ import {
 } from '@/components/formulaire';
 import { Icone } from '@/components/icones';
 import { LONGUEUR_MIN_MOT_DE_PASSE, messageErreurAuth } from '@/lib/erreurs';
-import { CONSENTEMENTS_REQUIS } from '@/lib/session';
+import { CONSENTEMENTS_REQUIS, useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { couleurs, polices } from '@/theme/tokens';
 
 /** Étape 1 sur 4 du parcours : le compte (spec étape 1, § 1). */
 export default function Inscription() {
+  const { setParcoursEnAttente } = useSession();
   const [prenom, setPrenom] = useState('');
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
@@ -39,13 +40,17 @@ export default function Inscription() {
       return setErreur('Pour créer votre compte, cochez les deux cases ci-dessous.');
     }
     setOccupe(true);
+    setParcoursEnAttente(true);
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: motDePasse,
       options: { data: { prenom: prenom.trim(), consentements: CONSENTEMENTS_REQUIS } },
     });
     setOccupe(false);
-    if (error) return setErreur(messageErreurAuth(error));
+    if (error) {
+      setParcoursEnAttente(false);
+      return setErreur(messageErreurAuth(error));
+    }
     // Sans session, Supabase attend la confirmation de l'adresse email.
     if (!data.session) setEmailAConfirmer(true);
     // Avec session, la navigation bascule d'elle-même vers l'application.

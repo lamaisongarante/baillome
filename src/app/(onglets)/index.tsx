@@ -1,4 +1,4 @@
-import { Link, useFocusEffect } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -11,14 +11,61 @@ import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { arrondis, couleurs, espaces, polices } from '@/theme/tokens';
 
+const TYPES: Record<string, string> = {
+  appartement: 'Appartement',
+  maison: 'Maison',
+  garage: 'Garage',
+  autre: 'Autre bien',
+};
+const SITUATIONS: Record<string, string> = {
+  loue_vide: 'Loué vide',
+  loue_meuble: 'Loué meublé',
+  pas_encore_loue: 'Pas encore loué',
+};
+
+type BienResume = {
+  id: string;
+  numero: number;
+  type_bien: string;
+  commune: string | null;
+  situation_locative: string | null;
+};
+
 /**
  * Accueil, d'après la maquette 01 (design/sources-html/Accueil.dc.html).
- * Le score, les biens et les échéances arriveront avec les étapes 1 et 2.
+ * Le score et les échéances arriveront avec l'étape 2 (conformité).
  */
 export default function Accueil() {
   const marges = useSafeAreaInsets();
-  const { session } = useSession();
+  const { session, parcoursEnAttente, setParcoursEnAttente } = useSession();
   const [prenom, setPrenom] = useState<string | null>(null);
+  const [biens, setBiens] = useState<BienResume[] | null>(null);
+  const [formule, setFormule] = useState<{ libelle: string; max: number | null } | null>(null);
+
+  // Juste après l'inscription, on enchaîne sur le premier bien (étape 2 sur 4).
+  useEffect(() => {
+    if (!parcoursEnAttente) return;
+    setParcoursEnAttente(false);
+    router.push({ pathname: '/bien/nouveau', params: { parcours: '1' } });
+  }, [parcoursEnAttente, setParcoursEnAttente]);
+
+  useFocusEffect(
+    useCallback(() => {
+      supabase
+        .from('biens')
+        .select('id, numero, type_bien, commune, situation_locative')
+        .order('numero')
+        .then(({ data }) => setBiens(data ?? []));
+      supabase
+        .from('profils')
+        .select('formules(libelle, max_biens)')
+        .single()
+        .then(({ data }) => {
+          const f = data?.formules as unknown as { libelle: string; max_biens: number | null } | null;
+          if (f) setFormule({ libelle: f.libelle, max: f.max_biens });
+        });
+    }, []),
+  );
 
   useEffect(() => {
     if (!session) return;
@@ -69,13 +116,44 @@ export default function Accueil() {
       </BandeauPin>
 
       <View style={styles.corps}>
-        <View style={styles.carte}>
-          <Text style={styles.legende}>ÉTAPE 0 · PRÉPARATION</Text>
-          <Text style={styles.texte}>
-            Ceci est la toute première version de l’application. Votre score, vos biens et vos
-            prochaines échéances s’afficheront ici.
+        <View style={styles.titreSection}>
+          <Text style={styles.h2} accessibilityRole="header">
+            Mes biens
           </Text>
+          {biens && formule ? (
+            <Text style={styles.compteur}>
+              {biens.length}
+              {formule.max ? ` / ${formule.max}` : ''} FORMULE {formule.libelle.toUpperCase()}
+            </Text>
+          ) : null}
         </View>
+
+        {biens?.map((b) => (
+          <Link key={b.id} href={{ pathname: '/bien/[id]', params: { id: b.id } }} asChild>
+            <Pressable style={styles.carteBien} accessibilityRole="button">
+              <View style={styles.tuileIcone}>
+                <Icone nom={b.type_bien === 'garage' ? 'biens' : 'accueil'} couleur={couleurs.pin} taille={24} epaisseur={2} />
+              </View>
+              <View style={styles.infosBien}>
+                <Text style={styles.legende}>
+                  BIEN N° {String(b.numero).padStart(2, '0')}
+                  {b.commune ? ` · ${b.commune.toUpperCase()}` : ''}
+                </Text>
+                <Text style={styles.nomBien}>{TYPES[b.type_bien] ?? 'Bien'}</Text>
+                {b.situation_locative ? (
+                  <Text style={styles.detailBien}>{SITUATIONS[b.situation_locative]}</Text>
+                ) : null}
+              </View>
+            </Pressable>
+          </Link>
+        ))}
+
+        <Link href="/bien/nouveau" asChild>
+          <Pressable style={styles.ajouter} accessibilityRole="button">
+            <Text style={styles.plus}>+</Text>
+            <Text style={styles.ajouterTexte}>Ajouter un bien</Text>
+          </Pressable>
+        </Link>
       </View>
     </ScrollView>
   );
@@ -148,7 +226,49 @@ const styles = StyleSheet.create({
   corps: {
     paddingHorizontal: 24,
     paddingTop: 24,
+    gap: 12,
   },
+  titreSection: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+  h2: { fontFamily: polices.titre, fontSize: 26, letterSpacing: -0.78, color: couleurs.texte },
+  compteur: { fontFamily: polices.technique, fontSize: 11, color: couleurs.texteDiscret },
+  carteBien: {
+    backgroundColor: couleurs.carte,
+    borderRadius: arrondis.carteBien,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  tuileIcone: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: couleurs.menthe,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infosBien: { flex: 1, gap: 2 },
+  nomBien: { fontFamily: polices.interfaceTresGras, fontSize: 16, color: couleurs.texte },
+  detailBien: { fontFamily: polices.interface, fontSize: 12.5, color: couleurs.texteSecondaire },
+  ajouter: {
+    height: 56,
+    borderRadius: arrondis.carteBien,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: couleurs.pointillesFort,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  plus: { fontFamily: polices.interfaceGras, fontSize: 20, color: couleurs.pin },
+  ajouterTexte: { fontFamily: polices.interfaceGras, fontSize: 14.5, color: couleurs.pin },
   carte: {
     backgroundColor: couleurs.carte,
     borderRadius: arrondis.carteBien,
