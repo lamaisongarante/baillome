@@ -69,6 +69,14 @@ grant update (chauffage_energie) on public.biens to authenticated;
 alter table public.biens add column surface_piece_principale numeric(6, 2)
   check (surface_piece_principale is null or surface_piece_principale > 0);
 grant update (surface_piece_principale) on public.biens to authenticated;
+-- Équipements de décence (R-12, décret n° 2002-120, art. 3) : questions à choix de la
+-- rubrique Équipements (décision du 22/10/2026), en complément des champs de texte libre.
+alter table public.biens
+  add column decence_chauffage text check (decence_chauffage in ('oui', 'non', 'nsp')),
+  add column decence_cuisine text check (decence_cuisine in ('oui', 'non')),
+  add column decence_wc text check (decence_wc in ('oui', 'non', 'exterieur_piece_unique')),
+  add column decence_salle_eau text check (decence_salle_eau in ('oui', 'non'));
+grant update (decence_chauffage, decence_cuisine, decence_wc, decence_salle_eau) on public.biens to authenticated;
 alter table public.diagnostics add column resultat text check (resultat in ('presence', 'absence'));
 
 alter table public.regles enable row level security;
@@ -273,6 +281,7 @@ from (values
   ('R-11', 'inventaire_complet', $x$Meublé bien équipé$x$),
   ('R-12', 'surface', $x$Surface trop petite pour louer$x$),
   ('R-12', 'arrete', $x$Logement sous arrêté$x$),
-  ('R-12', 'critere', $x$Point de décence à améliorer$x$)
+  ('R-12', 'critere', $x$Point de décence à améliorer$x$),
+  ('R-12', 'contraintes_travaux', $x$Travaux impossibles : gardez les preuves$x$)
 ) as t (regle_code, code, titre)
 where s.regle_code = t.regle_code and s.code = t.code;

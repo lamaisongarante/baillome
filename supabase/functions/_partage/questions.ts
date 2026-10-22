@@ -12,7 +12,18 @@ export type Question = {
   type: 'choix' | 'date' | 'classe_dpe' | 'nombre';
   options?: Option[];
   /** Champ de la fiche du bien qui porte la réponse, le cas échéant. */
-  fiche?: 'dpe_date' | 'dpe_classe' | 'chauffage_energie' | 'hauteur_sous_plafond' | 'surface_piece_principale' | 'type_habitat' | 'regime_juridique';
+  fiche?:
+    | 'dpe_date'
+    | 'dpe_classe'
+    | 'chauffage_energie'
+    | 'hauteur_sous_plafond'
+    | 'surface_piece_principale'
+    | 'type_habitat'
+    | 'regime_juridique'
+    | 'decence_chauffage'
+    | 'decence_cuisine'
+    | 'decence_wc'
+    | 'decence_salle_eau';
   /** Texte de la règle, affiché derrière le lien « Ce que dit la loi ». */
   loi?: string;
   /** Précision affichée sous la question, en plus petit. */
@@ -186,6 +197,49 @@ export const QUESTIONS: Question[] = [
       aValider: true,
     }),
   ),
+  // Équipements de décence : questions de la rubrique Équipements (décision du 22/10/2026).
+  {
+    code: 'decence_chauffage',
+    regle: 'R-12',
+    libelle: 'Le logement a-t-il un chauffage qui permet de chauffer normalement toutes les pièces principales ?',
+    type: 'choix',
+    fiche: 'decence_chauffage',
+    options: OUI_NON_NSP,
+  },
+  {
+    code: 'decence_cuisine',
+    regle: 'R-12',
+    libelle: 'Le logement a-t-il une cuisine ou un coin cuisine, avec un évier en eau chaude et froide, et la place pour un appareil de cuisson ?',
+    type: 'choix',
+    fiche: 'decence_cuisine',
+    options: [
+      { valeur: 'oui', libelle: 'Oui' },
+      { valeur: 'non', libelle: 'Non' },
+    ],
+  },
+  {
+    code: 'decence_wc',
+    regle: 'R-12',
+    libelle: 'Le logement a-t-il un WC à l\'intérieur, séparé de la cuisine et de la pièce où l\'on prend les repas ?',
+    type: 'choix',
+    fiche: 'decence_wc',
+    options: [
+      { valeur: 'oui', libelle: 'Oui' },
+      { valeur: 'non', libelle: 'Non' },
+      { valeur: 'exterieur_piece_unique', libelle: 'Logement d\'une seule pièce, WC à l\'extérieur dans le même bâtiment et facilement accessible' },
+    ],
+  },
+  {
+    code: 'decence_salle_eau',
+    regle: 'R-12',
+    libelle: 'Le logement a-t-il une douche ou une baignoire, en eau chaude et froide, dans une pièce qui préserve l\'intimité ?',
+    type: 'choix',
+    fiche: 'decence_salle_eau',
+    options: [
+      { valeur: 'oui', libelle: 'Oui' },
+      { valeur: 'non', libelle: 'Non' },
+    ],
+  },
   {
     code: 'contraintes_travaux',
     regle: 'R-12',

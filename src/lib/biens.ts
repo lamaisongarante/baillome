@@ -20,6 +20,10 @@ export type Bien = BienPourCompletude & {
   chauffage_repartition: string | null;
   chauffage_energie: string | null;
   surface_piece_principale: number | null;
+  decence_chauffage: string | null;
+  decence_cuisine: string | null;
+  decence_wc: string | null;
+  decence_salle_eau: string | null;
   notes: string | null;
 };
 

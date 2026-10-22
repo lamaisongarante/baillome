@@ -42,6 +42,10 @@ function contexte({ bien = {}, reponses = {}, apercu = false, aujourdhui = AUJ, 
       periode_construction: '1975_1989',
       hauteur_sous_plafond: 2.5,
       surface_piece_principale: 12,
+      decence_chauffage: 'oui',
+      decence_cuisine: 'oui',
+      decence_wc: 'oui',
+      decence_salle_eau: 'oui',
       dpe_classe: 'C',
       dpe_date: '2022-03-14',
       chauffage_energie: 'gaz',
@@ -300,6 +304,25 @@ describe('R-05, R-08, R-09, R-11, R-12 (en aperçu)', () => {
     const q = r.etats.find((e) => e.regle === 'R-12').questions;
     assert.equal(q.length, 10);
     assert.ok(!q.includes('decence_chauffage') && !q.includes('decence_cuisine') && !q.includes('decence_sanitaires'));
+  });
+
+  test('R-12 : cuisine sans évier ou sans place pour la cuisson → critère « cuisine »', () => {
+    const r = ev({ apercu: true, bien: { decence_cuisine: 'non' } });
+    assert.deepEqual(r.constats.filter((c) => c.regle === 'R-12').map((c) => c.valeurs['critère']), ['cuisine']);
+  });
+
+  test('R-12 : WC et salle d\'eau non conformes → un seul critère « sanitaires »', () => {
+    const r = ev({ apercu: true, bien: { decence_wc: 'non', decence_salle_eau: 'non' } });
+    assert.deepEqual(r.constats.filter((c) => c.regle === 'R-12').map((c) => c.valeurs['critère']), ['sanitaires']);
+  });
+
+  test('R-12 : logement d\'une seule pièce avec WC extérieur dans le bâtiment → conforme', () => {
+    assert.deepEqual(situations(ev({ apercu: true, bien: { decence_wc: 'exterieur_piece_unique' } }), 'R-12'), []);
+  });
+
+  test('R-12 : équipement non renseigné dans la fiche → question posée', () => {
+    const r = ev({ apercu: true, bien: { decence_chauffage: null } });
+    assert.ok(r.etats.find((e) => e.regle === 'R-12').questions.includes('decence_chauffage'));
   });
 
   test('R-12 : surface de la plus grande pièce manquante → question de la fiche', () => {

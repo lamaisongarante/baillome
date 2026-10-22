@@ -57,7 +57,7 @@ Deno.serve(async (requete) => {
 
   let requeteBiens = supabase
     .from('biens')
-    .select('id, numero, type_bien, situation_locative, type_location, code_insee, identifiant_fiscal, type_habitat, regime_juridique, periode_construction, hauteur_sous_plafond, surface_piece_principale, dpe_classe, dpe_date, chauffage_energie')
+    .select('id, numero, type_bien, situation_locative, type_location, code_insee, identifiant_fiscal, type_habitat, regime_juridique, periode_construction, hauteur_sous_plafond, surface_piece_principale, decence_chauffage, decence_cuisine, decence_wc, decence_salle_eau, dpe_classe, dpe_date, chauffage_energie')
     .order('numero');
   if (bienId) requeteBiens = requeteBiens.eq('id', bienId);
   const biens = await requeteBiens;

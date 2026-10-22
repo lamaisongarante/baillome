@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ChampAdresse } from '@/components/champ-adresse';
 import { PilulesChoix, PilulesMultiples, SelecteurDpe } from '@/components/choix';
 import { BoutonPrincipal, CaseACocher, Champ, MessageErreur, MessageInfo } from '@/components/formulaire';
+import { question } from '@moteur/questions';
 import type { Adresse } from '@/lib/adresse';
 import type { Bien, Fiche } from '@/lib/biens';
 import { estMeuble } from '@/lib/completude';
@@ -451,6 +452,17 @@ export function RubriqueEnergie({ fiche, onEnregistre }: PropsRubrique) {
 // Équipements et mobilier du meublé
 // ---------------------------------------------------------------------
 
+/** Question à choix de décence (R-12), avec son libellé validé. */
+function QuestionDecence({ champ, valeur, onChange }: { champ: string; valeur: string | null; onChange: (v: string) => void }) {
+  const q = question(champ)!;
+  return (
+    <View style={styles.bloc}>
+      <Text style={styles.question}>{q.libelle}</Text>
+      <PilulesChoix libelleGroupe={q.libelle} valeur={valeur} onChange={onChange} options={q.options!} />
+    </View>
+  );
+}
+
 export function RubriqueEquipements({ fiche, onEnregistre }: PropsRubrique) {
   const b = fiche.bien;
   const { occupe, erreur, ok, enregistrer } = useEnregistrement(b.id, onEnregistre);
@@ -460,9 +472,18 @@ export function RubriqueEquipements({ fiche, onEnregistre }: PropsRubrique) {
   const [cuisine, setCuisine] = useState(b.cuisine ?? '');
   const [sanitaires, setSanitaires] = useState(b.sanitaires ?? '');
   const [numerique, setNumerique] = useState(b.equipements_numeriques ?? '');
+  const [decence, setDecence] = useState({
+    decence_chauffage: b.decence_chauffage,
+    decence_cuisine: b.decence_cuisine,
+    decence_wc: b.decence_wc,
+    decence_salle_eau: b.decence_salle_eau,
+  });
+
+  const choisir = (champ: keyof typeof decence) => (v: string) => setDecence({ ...decence, [champ]: v });
 
   function valider() {
     enregistrer({
+      ...decence,
       chauffage_mode: chauffage,
       chauffage_repartition: chauffage === 'collectif' ? repartition.trim() || null : null,
       eau_chaude_mode: eau,
@@ -489,6 +510,7 @@ export function RubriqueEquipements({ fiche, onEnregistre }: PropsRubrique) {
       {chauffage === 'collectif' ? (
         <Champ libelle="Répartition des frais de chauffage" value={repartition} onChangeText={setRepartition} multiline />
       ) : null}
+      <QuestionDecence champ="decence_chauffage" valeur={decence.decence_chauffage} onChange={choisir('decence_chauffage')} />
       <View style={styles.bloc}>
         <Libelle>Eau chaude</Libelle>
         <PilulesChoix
@@ -501,7 +523,10 @@ export function RubriqueEquipements({ fiche, onEnregistre }: PropsRubrique) {
           ]}
         />
       </View>
+      <QuestionDecence champ="decence_cuisine" valeur={decence.decence_cuisine} onChange={choisir('decence_cuisine')} />
       <Champ libelle="Cuisine" value={cuisine} onChangeText={setCuisine} placeholder="Équipée, plaques, four…" multiline />
+      <QuestionDecence champ="decence_wc" valeur={decence.decence_wc} onChange={choisir('decence_wc')} />
+      <QuestionDecence champ="decence_salle_eau" valeur={decence.decence_salle_eau} onChange={choisir('decence_salle_eau')} />
       <Champ libelle="Sanitaires" value={sanitaires} onChangeText={setSanitaires} placeholder="Salle d’eau, WC séparé…" multiline />
       <Champ libelle="Équipements numériques" value={numerique} onChangeText={setNumerique} placeholder="Télévision, internet, fibre…" multiline />
       <MessageErreur message={erreur} />
@@ -776,6 +801,7 @@ const styles = StyleSheet.create({
   troisColonnes: { flexDirection: 'row', gap: 8 },
   colonne: { flex: 1 },
   lien: { fontFamily: polices.interfaceTresGras, fontSize: 13.5, color: couleurs.pin },
+  question: { fontFamily: polices.interfaceGras, fontSize: 14.5, lineHeight: 20, color: couleurs.texte },
   sousTitre: { fontFamily: polices.titre, fontSize: 19, letterSpacing: -0.4, color: couleurs.texte },
   texte: { fontFamily: polices.interface, fontSize: 13, lineHeight: 19, color: couleurs.texteSecondaire },
   ligneTitre: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },

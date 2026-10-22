@@ -28,6 +28,10 @@ export type BienCheckup = {
   periode_construction: string | null;
   hauteur_sous_plafond: number | null;
   surface_piece_principale: number | null;
+  decence_chauffage: string | null;
+  decence_cuisine: string | null;
+  decence_wc: string | null;
+  decence_salle_eau: string | null;
   dpe_classe: string | null;
   dpe_date: string | null;
   chauffage_energie: string | null;
@@ -346,6 +350,22 @@ function evaluerR12(c: Contexte, r: RegleData, criteres: { code: string; critere
     if (!v) manquantes.push(`decence_${cr.code}`);
     else if (v === 'non') constats.push({ situation: 'critere', valeurs: { critère: cr.critere.toLowerCase() } });
   }
+
+  // Chauffage, cuisine et sanitaires : questions à choix de la fiche du bien (décision du 22/10/2026).
+  // Le WC extérieur n'est admis que pour un logement d'une seule pièce (option dédiée).
+  const equipements: { champ: keyof BienCheckup; critere: string }[] = [
+    { champ: 'decence_chauffage', critere: 'chauffage' },
+    { champ: 'decence_cuisine', critere: 'cuisine' },
+    { champ: 'decence_wc', critere: 'sanitaires' },
+    { champ: 'decence_salle_eau', critere: 'sanitaires' },
+  ];
+  const nonRespectes = new Set<string>();
+  for (const e of equipements) {
+    const v = b[e.champ];
+    if (v === null || v === undefined) manquantes.push(e.champ);
+    else if (v === 'non') nonRespectes.add(e.critere);
+  }
+  for (const critere of nonRespectes) constats.push({ situation: 'critere', valeurs: { critère: critere } });
 
   if (b.dpe_classe && ['E', 'F', 'G'].includes(b.dpe_classe)) {
     if (!rep.contraintes_travaux) manquantes.push('contraintes_travaux');
