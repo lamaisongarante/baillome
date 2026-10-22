@@ -246,3 +246,34 @@ function dureeTropCourte(minimumMois: number): Controle {
     aValider: true,
   };
 }
+
+// ---------------------------------------------------------------------
+// Révision du loyer (règle R-02) : loyer × IRL du trimestre de référence
+// de l'année en cours ÷ IRL du même trimestre de l'année précédente.
+// ---------------------------------------------------------------------
+
+export type IndiceIrl = { annee: number; trimestre: number; valeur: number; parution_jo: string | null };
+
+/**
+ * Indices à utiliser pour une révision à une date donnée : le dernier IRL du
+ * trimestre de référence publié à cette date, et celui du même trimestre un
+ * an plus tôt. Null si l'un des deux n'est pas encore connu.
+ */
+export function indicesPourRevision(
+  indices: IndiceIrl[],
+  trimestre: number,
+  dateRevision: string,
+): { nouveau: IndiceIrl; ancien: IndiceIrl } | null {
+  const publies = indices
+    .filter((i) => i.trimestre === trimestre && i.parution_jo !== null && i.parution_jo <= dateRevision)
+    .sort((a, b) => b.annee - a.annee);
+  const nouveau = publies[0];
+  if (!nouveau) return null;
+  const ancien = indices.find((i) => i.trimestre === trimestre && i.annee === nouveau.annee - 1);
+  return ancien ? { nouveau, ancien } : null;
+}
+
+/** Nouveau loyer hors charges, arrondi au centime. */
+export function loyerRevise(loyerHc: number, nouveau: number, ancien: number): number {
+  return Math.round(((loyerHc * nouveau) / ancien) * 100) / 100;
+}

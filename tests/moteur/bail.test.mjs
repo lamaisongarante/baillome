@@ -125,3 +125,17 @@ test('loi, art. 22 : pas de dépôt si le loyer est payé d’avance par trimest
   assert.ok(!codes(contexte({ periodicite: 'trimestrielle', terme: 'echu' })).includes('depot_paiement_trimestriel'));
   assert.ok(!codes(contexte({ periodicite: 'trimestrielle', terme: 'a_echoir', depot_garantie: null })).includes('depot_paiement_trimestriel'));
 });
+
+test('R-02 : révision avec l’IRL réel publié par l’Insee', async () => {
+  const { indicesPourRevision, loyerRevise } = await import('../../supabase/functions/_partage/bail.ts');
+  const { rows } = await db.query(`select annee, trimestre, valeur::float as valeur, parution_jo::text from indices_irl where zone = 'metropole'`);
+  // Révision au 1er novembre 2026, trimestre de référence T3 : T3 2026 (148,06, paru le 16/10/2026) ÷ T3 2025 (145,77).
+  const i = indicesPourRevision(rows, 3, '2026-11-01');
+  assert.deepEqual([i.nouveau.annee, i.nouveau.valeur, i.ancien.annee, i.ancien.valeur], [2026, 148.06, 2025, 145.77]);
+  assert.equal(loyerRevise(700, i.nouveau.valeur, i.ancien.valeur), 711);
+  // Avant la parution du T3 2026, c'est le T3 2025 qui sert.
+  const avant = indicesPourRevision(rows, 3, '2026-10-15');
+  assert.deepEqual([avant.nouveau.annee, avant.ancien.annee], [2025, 2024]);
+  // Trimestre jamais publié à cette date : pas de calcul.
+  assert.equal(indicesPourRevision(rows, 4, '2002-12-31'), null);
+});

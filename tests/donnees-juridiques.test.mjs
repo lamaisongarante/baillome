@@ -41,3 +41,11 @@ test('contrats types : les cinq modifications du décret n° 2026-596 sont prés
     assert.ok(texte.includes('La clause de résiliation de plein droit ne produit effet que six semaines après la date d\'un commandement de payer demeuré infructueux.'));
   }
 });
+
+test('IRL (Insee, série 001515333) : fichier identique au tableau publié', () => {
+  const contenu = readFileSync(new URL('../supabase/donnees/insee-irl-001515333-2026-10-22.tsv', import.meta.url));
+  assert.equal(
+    createHash('sha256').update(contenu).digest('hex'),
+    '08cbe5aaa5a072aac681df8b57314a958ac3963a4e5b9fca46618994ea019253',
+  );
+});
