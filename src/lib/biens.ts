@@ -18,6 +18,11 @@ export type Bien = BienPourCompletude & {
   dpe_numero: string | null;
   dpe_annee_reference_prix: number | null;
   chauffage_repartition: string | null;
+  eau_chaude_repartition: string | null;
+  parties_communes: string | null;
+  cuisine_equipements: string[];
+  salle_eau_equipements: string[];
+  wc: 'separe' | 'salle_eau' | null;
   chauffage_energie: string | null;
   surface_piece_principale: number | null;
   decence_chauffage: string | null;

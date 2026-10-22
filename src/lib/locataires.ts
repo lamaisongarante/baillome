@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import type { TypeBail, TypeGarant } from '@/lib/personnes';
 
 export const COLONNES_PERSONNE =
-  'id, role, prenom, nom, email, telephone, adresse, etudiant, apprenti, boursier, accord_email_le, adresse_apres_depart, type_garant, visale_reference, notes';
+  'id, role, prenom, nom, email, telephone, adresse, date_naissance, lieu_naissance, etudiant, apprenti, boursier, accord_email_le, adresse_apres_depart, type_garant, visale_reference, notes';
 
 export type Personne = {
   id: string;
@@ -13,6 +13,8 @@ export type Personne = {
   email: string | null;
   telephone: string | null;
   adresse: string | null;
+  date_naissance: string | null;
+  lieu_naissance: string | null;
   etudiant: boolean;
   apprenti: boolean;
   boursier: boolean | null;

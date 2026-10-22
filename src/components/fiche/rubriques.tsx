@@ -8,6 +8,7 @@ import { question } from '@moteur/questions';
 import type { Adresse } from '@/lib/adresse';
 import type { Bien, Fiche } from '@/lib/biens';
 import { estMeuble } from '@/lib/completude';
+import { EQUIPEMENTS_CUISINE, EQUIPEMENTS_SALLE_EAU, WC, phraseEquipements } from '@/lib/equipements';
 import {
   estDansLeFutur,
   formaterDateEnCours,
@@ -103,6 +104,7 @@ export function RubriqueIdentite({ fiche, onEnregistre }: PropsRubrique) {
   const [regime, setRegime] = useState(b.regime_juridique);
   const [periode, setPeriode] = useState(b.periode_construction);
   const [entite, setEntite] = useState(b.entite_id);
+  const [partiesCommunes, setPartiesCommunes] = useState(b.parties_communes ?? '');
   const logement = b.type_bien !== 'garage';
 
   function valider() {
@@ -122,6 +124,7 @@ export function RubriqueIdentite({ fiche, onEnregistre }: PropsRubrique) {
       identifiant_fiscal: id || null,
       type_habitat: logement ? habitat : null,
       regime_juridique: regime,
+      parties_communes: logement && (regime === 'copropriete' || habitat === 'collectif') ? partiesCommunes.trim() || null : null,
       periode_construction: logement ? periode : null,
       entite_id: entite,
     });
@@ -188,6 +191,16 @@ export function RubriqueIdentite({ fiche, onEnregistre }: PropsRubrique) {
           ]}
         />
       </View>
+      {logement && (regime === 'copropriete' || habitat === 'collectif') ? (
+        <Champ
+          libelle="Parties et équipements communs"
+          value={partiesCommunes}
+          onChangeText={setPartiesCommunes}
+          multiline
+          placeholder="Ascenseur, local vélos, espaces verts, interphone… ou « Néant »"
+          aide="Repris au bail (contrat type, II. D). Écrivez « Néant » s’il n’y en a aucun."
+        />
+      ) : null}
 
       {logement ? (
         <View style={styles.bloc}>
@@ -469,6 +482,10 @@ export function RubriqueEquipements({ fiche, onEnregistre }: PropsRubrique) {
   const [chauffage, setChauffage] = useState(b.chauffage_mode);
   const [repartition, setRepartition] = useState(b.chauffage_repartition ?? '');
   const [eau, setEau] = useState(b.eau_chaude_mode);
+  const [repartitionEau, setRepartitionEau] = useState(b.eau_chaude_repartition ?? '');
+  const [equipCuisine, setEquipCuisine] = useState<string[]>(b.cuisine_equipements ?? []);
+  const [equipSalleEau, setEquipSalleEau] = useState<string[]>(b.salle_eau_equipements ?? []);
+  const [wc, setWc] = useState(b.wc);
   const [cuisine, setCuisine] = useState(b.cuisine ?? '');
   const [sanitaires, setSanitaires] = useState(b.sanitaires ?? '');
   const [numerique, setNumerique] = useState(b.equipements_numeriques ?? '');
@@ -487,6 +504,10 @@ export function RubriqueEquipements({ fiche, onEnregistre }: PropsRubrique) {
       chauffage_mode: chauffage,
       chauffage_repartition: chauffage === 'collectif' ? repartition.trim() || null : null,
       eau_chaude_mode: eau,
+      eau_chaude_repartition: eau === 'collective' ? repartitionEau.trim() || null : null,
+      cuisine_equipements: equipCuisine,
+      salle_eau_equipements: equipSalleEau,
+      wc,
       cuisine: cuisine.trim() || null,
       sanitaires: sanitaires.trim() || null,
       equipements_numeriques: numerique.trim() || null,
@@ -508,7 +529,14 @@ export function RubriqueEquipements({ fiche, onEnregistre }: PropsRubrique) {
         />
       </View>
       {chauffage === 'collectif' ? (
-        <Champ libelle="Répartition des frais de chauffage" value={repartition} onChangeText={setRepartition} multiline />
+        <Champ
+          libelle="Répartition de la consommation de chauffage"
+          value={repartition}
+          onChangeText={setRepartition}
+          multiline
+          placeholder="Tantièmes, compteurs individuels, répartiteurs…"
+          aide="Obligatoire au bail en cas de chauffage collectif (contrat type, note 4)."
+        />
       ) : null}
       <QuestionDecence champ="decence_chauffage" valeur={decence.decence_chauffage} onChange={choisir('decence_chauffage')} />
       <View style={styles.bloc}>
@@ -523,11 +551,53 @@ export function RubriqueEquipements({ fiche, onEnregistre }: PropsRubrique) {
           ]}
         />
       </View>
+      {eau === 'collective' ? (
+        <Champ
+          libelle="Répartition de la consommation d’eau chaude"
+          value={repartitionEau}
+          onChangeText={setRepartitionEau}
+          multiline
+          placeholder="Tantièmes, compteurs individuels…"
+          aide="Obligatoire au bail en cas de production collective (contrat type, note 5)."
+        />
+      ) : null}
       <QuestionDecence champ="decence_cuisine" valeur={decence.decence_cuisine} onChange={choisir('decence_cuisine')} />
-      <Champ libelle="Cuisine" value={cuisine} onChangeText={setCuisine} placeholder="Équipée, plaques, four…" multiline />
+      <View style={styles.bloc}>
+        <Libelle>Équipements de la cuisine</Libelle>
+        <PilulesMultiples
+          libelleGroupe="Équipements de la cuisine"
+          valeurs={equipCuisine}
+          onChange={setEquipCuisine}
+          options={EQUIPEMENTS_CUISINE.map((e) => ({ valeur: e.valeur, libelle: e.libelle }))}
+        />
+      </View>
+      <Champ libelle="Précisions sur la cuisine (facultatif)" value={cuisine} onChangeText={setCuisine} multiline />
       <QuestionDecence champ="decence_wc" valeur={decence.decence_wc} onChange={choisir('decence_wc')} />
       <QuestionDecence champ="decence_salle_eau" valeur={decence.decence_salle_eau} onChange={choisir('decence_salle_eau')} />
-      <Champ libelle="Sanitaires" value={sanitaires} onChangeText={setSanitaires} placeholder="Salle d’eau, WC séparé…" multiline />
+      <View style={styles.bloc}>
+        <Libelle>Salle d’eau</Libelle>
+        <PilulesMultiples
+          libelleGroupe="Équipements de la salle d’eau"
+          valeurs={equipSalleEau}
+          onChange={setEquipSalleEau}
+          options={EQUIPEMENTS_SALLE_EAU.map((e) => ({ valeur: e.valeur, libelle: e.libelle }))}
+        />
+      </View>
+      <View style={styles.bloc}>
+        <Libelle>WC</Libelle>
+        <PilulesChoix
+          libelleGroupe="WC"
+          valeur={wc}
+          onChange={setWc}
+          options={WC.map((e) => ({ valeur: e.valeur, libelle: e.libelle }))}
+        />
+      </View>
+      <Champ libelle="Précisions sur les sanitaires (facultatif)" value={sanitaires} onChangeText={setSanitaires} multiline />
+      {equipCuisine.length || equipSalleEau.length || wc ? (
+        <Text style={styles.aide}>
+          Au bail : {phraseEquipements({ cuisine_equipements: equipCuisine, salle_eau_equipements: equipSalleEau, wc, cuisine, sanitaires })}
+        </Text>
+      ) : null}
       <Champ libelle="Équipements numériques" value={numerique} onChangeText={setNumerique} placeholder="Télévision, internet, fibre…" multiline />
       <MessageErreur message={erreur} />
       <Confirmation visible={ok} />
@@ -795,6 +865,7 @@ export function RubriqueNotes({ fiche, onEnregistre }: PropsRubrique) {
 const styles = StyleSheet.create({
   rubrique: { gap: 16 },
   bloc: { gap: 8 },
+  aide: { fontFamily: polices.interface, fontSize: 13, lineHeight: 19, color: couleurs.texteSecondaire },
   separation: { marginTop: 12, paddingTop: 16, borderTopWidth: 1, borderTopColor: couleurs.pointilles },
   libelle: { fontFamily: polices.techniqueGras, fontSize: 10.5, color: couleurs.texteDiscret },
   deuxColonnes: { flexDirection: 'row', gap: 10 },

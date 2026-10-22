@@ -101,6 +101,7 @@ export function plafondDepot(type: TypeBail, loyerHc: number | null, p: Parametr
 
 export type BailSaisi = {
   type_bail: TypeBail;
+  soumis_evolution_relocation?: boolean | null;
   date_effet: string | null;
   duree_mois: number | null;
   motif_duree_reduite: string | null;
@@ -118,6 +119,12 @@ export type ContexteBail = {
   /** Nombre de locataires, et s'ils sont mariés ou pacsés ensemble. */
   locataires: { nombre: number; couple: boolean; tousEtudiants: boolean };
   parametresR03: ParametresR03;
+  /**
+   * Commune du bien dans la liste des zones tendues applicable à la date de
+   * prise d'effet (décret n° 2013-392 avant 2027, n° 2026-831 ensuite) ; null
+   * si aucune liste stockée ne couvre cette date.
+   */
+  zoneTendueOfficielle?: boolean | null;
 };
 
 export type NiveauControle = 'bloquant' | 'avertissement' | 'information';
@@ -233,6 +240,24 @@ export function controlerBail(c: ContexteBail): Controle[] {
     });
   }
 
+  // R-09 : réponse du bailleur différente de la liste officielle applicable à la date du bail.
+  if (
+    habitation &&
+    c.zoneTendueOfficielle != null &&
+    bail.soumis_evolution_relocation != null &&
+    bail.soumis_evolution_relocation !== c.zoneTendueOfficielle
+  ) {
+    controles.push({
+      code: 'zone_tendue_ecart',
+      niveau: 'avertissement',
+      source: 'R-09',
+      message: c.zoneTendueOfficielle
+        ? 'D’après la liste officielle applicable à la date de prise d’effet, la commune du logement est en zone tendue : le loyer est soumis au plafond d’évolution à la relocation.'
+        : 'D’après la liste officielle applicable à la date de prise d’effet, la commune du logement n’est pas en zone tendue. Vérifiez votre réponse.',
+      aValider: true,
+    });
+  }
+
   return controles;
 }
 
@@ -276,4 +301,16 @@ export function indicesPourRevision(
 /** Nouveau loyer hors charges, arrondi au centime. */
 export function loyerRevise(loyerHc: number, nouveau: number, ancien: number): number {
   return Math.round(((loyerHc * nouveau) / ancien) * 100) / 100;
+}
+
+/**
+ * Trimestre de l'IRL proposé par défaut : le dernier indice publié à la date
+ * de signature (règle R-02 : « on retient celui du dernier indice publié à la
+ * signature du bail »). Le bailleur peut en choisir un autre.
+ */
+export function dernierIrlPublie(indices: IndiceIrl[], dateSignature: string): IndiceIrl | null {
+  const publies = indices
+    .filter((i) => i.parution_jo !== null && i.parution_jo <= dateSignature)
+    .sort((a, b) => b.annee - a.annee || b.trimestre - a.trimestre);
+  return publies[0] ?? null;
 }

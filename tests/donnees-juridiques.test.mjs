@@ -49,3 +49,11 @@ test('IRL (Insee, série 001515333) : fichier identique au tableau publié', () 
     '08cbe5aaa5a072aac681df8b57314a958ac3963a4e5b9fca46618994ea019253',
   );
 });
+
+test('annexe, 1°, du décret n° 2013-392 (version 2025-1267) : fichier identique au tableau de Légifrance', () => {
+  const contenu = readFileSync(new URL('../supabase/donnees/decret-2013-392-annexe-1-version-2025-1267.tsv', import.meta.url));
+  assert.equal(
+    createHash('sha256').update(contenu).digest('hex'),
+    'f8c8b0ce1ba8f19344057b13232f162251fbe586b39853101d7aa1240f8ed057',
+  );
+});

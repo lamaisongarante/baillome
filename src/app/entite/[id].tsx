@@ -23,6 +23,8 @@ export default function EcranEntite() {
   const [nom, setNom] = useState('');
   const [siren, setSiren] = useState('');
   const [siege, setSiege] = useState('');
+  const [forme, setForme] = useState('');
+  const [representant, setRepresentant] = useState('');
   const [familiale, setFamiliale] = useState(false);
   const [biens, setBiens] = useState<BienResume[]>([]);
   const [occupe, setOccupe] = useState(false);
@@ -32,7 +34,7 @@ export default function EcranEntite() {
     if (nouvelle) return;
     supabase
       .from('entites')
-      .select('type, nom, siren, sci_familiale, siege')
+      .select('type, nom, siren, sci_familiale, siege, forme_juridique, representant_legal')
       .eq('id', id)
       .single()
       .then(({ data }) => {
@@ -41,6 +43,8 @@ export default function EcranEntite() {
         setNom(data.nom);
         setSiren(data.siren ?? '');
         setSiege(data.siege ?? '');
+        setForme(data.forme_juridique ?? '');
+        setRepresentant(data.representant_legal ?? '');
         setFamiliale(data.sci_familiale);
       });
     supabase
@@ -65,6 +69,8 @@ export default function EcranEntite() {
       siren: type === 'sci' ? s || null : null,
       sci_familiale: type === 'sci' ? familiale : false,
       siege: type === 'sci' ? siege.trim() || null : null,
+      forme_juridique: type === 'sci' ? forme.trim() || null : null,
+      representant_legal: type === 'sci' ? representant.trim() || null : null,
     };
     setOccupe(true);
     const { error } = nouvelle
@@ -142,6 +148,18 @@ export default function EcranEntite() {
                 value={siege}
                 onChangeText={setSiege}
                 aide="Il figure dans les baux des biens de la SCI, comme l’exige le contrat type."
+              />
+              <Champ
+                libelle="Forme juridique (facultatif)"
+                value={forme}
+                onChangeText={setForme}
+                placeholder="Société civile immobilière"
+              />
+              <Champ
+                libelle="Représentant légal (facultatif)"
+                value={representant}
+                onChangeText={setRepresentant}
+                placeholder="Prénom Nom, gérant"
               />
               <CaseACocher cochee={familiale} onChange={setFamiliale} libelleAccessible="Société civile familiale jusqu’au quatrième degré">
                 Société civile familiale jusqu’au quatrième degré

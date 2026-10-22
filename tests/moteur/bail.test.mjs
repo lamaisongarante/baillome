@@ -139,3 +139,22 @@ test('R-02 : révision avec l’IRL réel publié par l’Insee', async () => {
   // Trimestre jamais publié à cette date : pas de calcul.
   assert.equal(indicesPourRevision(rows, 4, '2002-12-31'), null);
 });
+
+test('R-02 : trimestre proposé par défaut = dernier IRL publié à la signature', async () => {
+  const { dernierIrlPublie } = await import('../../supabase/functions/_partage/bail.ts');
+  const { rows } = await db.query(`select annee, trimestre, valeur::float as valeur, parution_jo::text from indices_irl`);
+  // Signature le 22/10/2026 : le T3 2026 est paru le 16/10/2026.
+  assert.deepEqual([dernierIrlPublie(rows, '2026-10-22').annee, dernierIrlPublie(rows, '2026-10-22').trimestre], [2026, 3]);
+  // Signature le 15/10/2026 : le T3 n'est pas encore paru, c'est le T2 2026.
+  assert.deepEqual([dernierIrlPublie(rows, '2026-10-15').annee, dernierIrlPublie(rows, '2026-10-15').trimestre], [2026, 2]);
+});
+
+test('R-09 : réponse « zone tendue » comparée à la liste officielle applicable à la date du bail', () => {
+  const ecart = (reponse, officielle) =>
+    codes(contexte({ soumis_evolution_relocation: reponse }, { zoneTendueOfficielle: officielle })).includes('zone_tendue_ecart');
+  assert.equal(ecart(true, true), false);
+  assert.equal(ecart(false, true), true);
+  assert.equal(ecart(true, false), true);
+  // Aucune liste stockée pour la date : pas d'avertissement (on ne devine pas).
+  assert.equal(ecart(true, null), false);
+});

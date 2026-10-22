@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CaseACocher, Champ, MessageErreur, MessageInfo } from '@/components/formulaire';
 import { afficherTelephone, lireTelephone } from '@/lib/personnes';
+import { formaterDateEnCours, lireDateFrancaise, versDateFrancaise } from '@/lib/saisie';
 import { Icone } from '@/components/icones';
 import { exporterMesDonnees, supprimerMonCompte } from '@/lib/compte';
 import { useSession } from '@/lib/session';
@@ -29,6 +30,8 @@ export default function Compte() {
   const [adresse, setAdresse] = useState('');
   const [telephone, setTelephone] = useState('');
   const [emailDansBaux, setEmailDansBaux] = useState(false);
+  const [naissance, setNaissance] = useState('');
+  const [lieuNaissance, setLieuNaissance] = useState('');
   const [formule, setFormule] = useState<string | null>(null);
   const [entites, setEntites] = useState<Entite[]>([]);
   const [message, setMessage] = useState<string | null>(null);
@@ -39,7 +42,7 @@ export default function Compte() {
     useCallback(() => {
       supabase
         .from('profils')
-        .select('prenom, nom, adresse, telephone, email_dans_baux, formules(libelle)')
+        .select('prenom, nom, adresse, telephone, email_dans_baux, date_naissance, lieu_naissance, formules(libelle)')
         .single()
         .then(({ data }) => {
           setPrenom(data?.prenom ?? '');
@@ -47,6 +50,8 @@ export default function Compte() {
           setAdresse(data?.adresse ?? '');
           setTelephone(afficherTelephone(data?.telephone ?? null));
           setEmailDansBaux(!!data?.email_dans_baux);
+          setNaissance(versDateFrancaise(data?.date_naissance ?? null));
+          setLieuNaissance(data?.lieu_naissance ?? '');
           setFormule((data?.formules as unknown as { libelle: string } | null)?.libelle ?? null);
         });
       supabase
@@ -62,10 +67,12 @@ export default function Compte() {
     setErreur(null);
     const tel = lireTelephone(telephone);
     if (tel === undefined) return setErreur('Ce numéro de portable ne semble pas complet. Exemple : 06 12 34 56 78.');
+    const dateNaissance = naissance.trim() ? lireDateFrancaise(naissance) : null;
+    if (naissance.trim() && !dateNaissance) return setErreur('La date de naissance doit être au format JJ/MM/AAAA.');
     setOccupe('profil');
     const { error } = await supabase
       .from('profils')
-      .update({ prenom: prenom.trim() || null, nom: nom.trim() || null, adresse: adresse.trim() || null, telephone: tel, email_dans_baux: emailDansBaux })
+      .update({ prenom: prenom.trim() || null, nom: nom.trim() || null, adresse: adresse.trim() || null, telephone: tel, email_dans_baux: emailDansBaux, date_naissance: dateNaissance, lieu_naissance: lieuNaissance.trim() || null })
       .eq('id', session?.user.id ?? '');
     setOccupe(null);
     if (error) setErreur('L’enregistrement n’a pas abouti. Vérifiez votre connexion et réessayez.');
@@ -156,6 +163,21 @@ export default function Compte() {
             autoComplete="tel"
             placeholder="06 12 34 56 78"
           />
+          <View style={styles.deuxColonnes}>
+            <View style={styles.colonne}>
+              <Champ
+                libelle="Date de naissance"
+                value={naissance}
+                onChangeText={(t) => setNaissance(formaterDateEnCours(t))}
+                keyboardType="number-pad"
+                placeholder="JJ/MM/AAAA"
+                maxLength={10}
+              />
+            </View>
+            <View style={styles.colonne}>
+              <Champ libelle="Lieu de naissance" value={lieuNaissance} onChangeText={setLieuNaissance} />
+            </View>
+          </View>
           <CaseACocher
             cochee={emailDansBaux}
             onChange={setEmailDansBaux}

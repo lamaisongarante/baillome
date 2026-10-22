@@ -19,7 +19,8 @@ export function html(texte: string): string {
 
 /** Valeur remplie par Baillome : soulignée en pointillé, en gras vert pin. */
 export function champ(valeur: string): string {
-  return `<span class="champ">${html(valeur)}</span>`;
+  // Une valeur courte (numéro, date, montant) ne se coupe pas en fin de ligne.
+  return `<span class="champ${valeur.length <= 32 ? ' insecable' : ''}">${html(valeur)}</span>`;
 }
 
 export function euros(n: number): string {
@@ -38,7 +39,7 @@ const POLICES =
   'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap';
 
 /** Logo « maison interrupteur » au trait, repris de design/sources-html/Bail-Editorial.dc.html. */
-const LOGO = `<svg width="16" height="16" viewBox="0 0 100 100"><path d="M15 47 L50 18 L85 47" fill="none" stroke="${PIN}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M25 41 V81 H75 V41" fill="none" stroke="${PIN}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><rect x="31" y="51" width="38" height="22" rx="11" fill="none" stroke="${PIN}" stroke-width="7"/><circle cx="58" cy="62" r="7.5" fill="${PIN}"/></svg>`;
+const LOGO = `<svg width="12" height="12" viewBox="0 0 100 100"><path d="M15 47 L50 18 L85 47" fill="none" stroke="${PIN}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M25 41 V81 H75 V41" fill="none" stroke="${PIN}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><rect x="31" y="51" width="38" height="22" rx="11" fill="none" stroke="${PIN}" stroke-width="7"/><circle cx="58" cy="62" r="7.5" fill="${PIN}"/></svg>`;
 
 /**
  * Document A4 : en-tête en haut du document, pied à la fin. (La répétition
@@ -62,43 +63,69 @@ export function page({
 <title>${html(titre)}</title>
 <link rel="stylesheet" href="${POLICES}">
 <style>
-@page { size: A4; margin: 16mm 17mm 16mm 17mm; }
+@page { size: A4; margin: 19mm; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: ${FOND}; }
-body { font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 10.5px; line-height: 1.5; color: ${TEXTE}; }
-.entete { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid ${PIN}; margin-bottom: 14px; }
-.marque { display: flex; align-items: center; gap: 7px; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 800; letter-spacing: -0.03em; color: ${PIN}; }
-.marque span.logo { width: 24px; height: 24px; border: 1.5px solid ${PIN}; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; }
-.mono { font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.08em; }
-.reference { font-size: 8.5px; color: ${SECONDAIRE}; }
-.pied { margin-top: 18px; display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid ${FILET}; font-size: 8px; color: ${SECONDAIRE}; }
-.cartouche { border: 1.5px solid ${PIN}; border-radius: 14px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 8px; }
-.cartouche .sur-titre { font-size: 9px; color: ${SECONDAIRE}; }
-.cartouche h1 { margin: 6px 0 0 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 19px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; color: ${PIN}; }
-.cartouche .loi { font-size: 8px; line-height: 1.6; color: ${SECONDAIRE}; text-align: right; max-width: 45%; }
-.partie { margin-top: 18px; display: flex; align-items: baseline; gap: 12px; border-top: 1px solid ${FILET}; padding-top: 10px; break-after: avoid; page-break-after: avoid; }
-.partie .numero { font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.04em; color: ${PIN}; line-height: 1; min-width: 46px; }
-.partie .intitule { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; color: ${PIN}; text-transform: uppercase; }
-.rubrique { margin: 10px 0 2px 0; font-weight: 700; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
-p { margin: 3px 0; }
-p.tiret { padding-left: 12px; text-indent: -12px; }
-.champ { border-bottom: 1.5px dotted ${PIN}; padding: 0 2px; font-weight: 600; color: ${PIN}; }
-.encadre { border: 1px solid ${TRAIT}; border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
-.encadre-fort { border: 1.5px solid ${PIN}; border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
-.notes { margin-top: 18px; padding-top: 8px; border-top: 1px solid ${FILET}; font-size: 8.5px; line-height: 1.45; color: ${SECONDAIRE}; }
-.notes p { margin: 2px 0; }
-.signatures { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; break-inside: avoid; page-break-inside: avoid; }
-.signature { border: 1.5px solid ${PIN}; border-radius: 12px; padding: 12px 14px; min-height: 110px; }
-.signature .qui { font-weight: 700; color: ${PIN}; margin-bottom: 6px; }
-.signature .niveau { font-size: 8.5px; color: ${SECONDAIRE}; }
-.signature .nom { margin-top: 8px; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 800; color: ${PIN}; }
+/* Texte juridique : copiable et recherchable sans erreur (pas de ligatures, pas d'espacement des lettres). */
+body { font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 9.75pt; line-height: 1.4; color: ${TEXTE};
+  font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0, "dlig" 0; letter-spacing: 0; }
+.entete { display: flex; justify-content: space-between; align-items: center; padding-bottom: 6pt; border-bottom: 0.75pt solid ${PIN}; margin-bottom: 12pt; }
+.marque { display: flex; align-items: center; gap: 6pt; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 11pt; font-weight: 800; color: ${PIN}; }
+.marque span.logo { width: 18pt; height: 18pt; border: 1.1pt solid ${PIN}; border-radius: 5pt; display: inline-flex; align-items: center; justify-content: center; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+.reference { font-size: 7pt; color: ${SECONDAIRE}; }
+.pied { margin-top: 14pt; display: flex; justify-content: space-between; gap: 12pt; padding-top: 5pt; border-top: 0.75pt solid ${FILET}; font-size: 6.5pt; color: ${SECONDAIRE}; }
+.cartouche { border: 1.1pt solid ${PIN}; border-radius: 10pt; padding: 12pt 16pt; display: flex; justify-content: space-between; align-items: flex-end; gap: 14pt; margin-bottom: 6pt; }
+.cartouche .sur-titre { font-size: 7.5pt; color: ${SECONDAIRE}; }
+.cartouche h1 { margin: 5pt 0 0 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 17pt; font-weight: 800; line-height: 1.15; color: ${PIN}; }
+.cartouche .loi { font-size: 7pt; line-height: 1.5; color: ${SECONDAIRE}; text-align: right; max-width: 42%; }
+.partie { margin-top: 14pt; display: flex; align-items: baseline; gap: 10pt; border-top: 0.75pt solid ${FILET}; padding-top: 8pt; break-after: avoid; page-break-after: avoid; }
+.partie .numero { font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 21pt; font-weight: 800; color: ${PIN}; line-height: 1; min-width: 36pt; }
+.partie .intitule { font-family: 'IBM Plex Mono', monospace; font-size: 8.5pt; font-weight: 600; color: ${PIN}; text-transform: uppercase; }
+.rubrique { margin: 8pt 0 2pt 0; font-weight: 700; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
+p { margin: 3.5pt 0; }
+p.tiret { padding-left: 9pt; text-indent: -9pt; }
+.grille { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16pt; }
+.grille p { margin: 2pt 0; }
+.grille p.large { grid-column: 1 / -1; }
+.champ { border-bottom: 1pt dotted ${PIN}; padding: 0 1.5pt; font-weight: 600; color: ${PIN}; }
+.insecable, .option { white-space: nowrap; }
+.encadre { border: 0.75pt solid ${TRAIT}; border-radius: 8pt; padding: 8pt 10pt; margin: 6pt 0; }
+.encadre-fort { border: 1.1pt solid ${PIN}; border-radius: 9pt; padding: 9pt 11pt; margin: 8pt 0; break-inside: avoid; page-break-inside: avoid; }
+.etiquette { font-size: 7pt; color: ${SECONDAIRE}; margin-bottom: 3pt; }
+.deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; margin-top: 6pt; }
+.partie-encadre { margin: 0; break-inside: avoid; page-break-inside: avoid; }
+.ligne { padding: 1.5pt 0; }
+.libelle { color: ${SECONDAIRE}; }
+.case { display: inline-block; width: 7pt; height: 7pt; border: 0.9pt solid ${PIN}; border-radius: 1.5pt; vertical-align: -0.5pt; margin: 0 3pt 0 4pt; }
+.case.cochee { background: ${PIN}; }
+.personne + .personne { margin-top: 5pt; padding-top: 5pt; border-top: 0.75pt dashed ${TRAIT}; }
+.complements { margin-top: 4pt; padding-top: 3pt; border-top: 0.75pt dashed ${TRAIT}; }
+.designe { margin-top: 4pt; font-size: 8.5pt; color: ${SECONDAIRE}; }
+.rappel { display: flex; gap: 12pt; align-items: center; }
+.rappel-texte { flex: 1; font-size: 8.5pt; }
+.rappel-texte p { margin: 1.5pt 0; }
+.dpe { display: flex; align-items: center; gap: 8pt; padding-left: 12pt; border-left: 0.75pt solid ${PIN}; }
+.dpe .mono { font-size: 7pt; color: ${SECONDAIRE}; line-height: 1.4; }
+.dpe .lettre { width: 32pt; height: 32pt; border: 2.25pt solid; border-radius: 7pt; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 18pt; font-weight: 800; }
+.joints { margin: 2pt 0 6pt 9pt; font-size: 8.5pt; }
+.joints .etiquette { display: inline; margin-right: 4pt; }
+.preambule { margin-top: 14pt; border: 0.75pt solid ${TRAIT}; border-radius: 8pt; padding: 8pt 10pt; font-size: 8pt; line-height: 1.35; color: ${SECONDAIRE}; }
+.preambule p { margin: 2pt 0; }
+.notes { margin-top: 12pt; padding-top: 6pt; border-top: 0.75pt solid ${FILET}; font-size: 7.5pt; line-height: 1.35; color: ${SECONDAIRE}; }
+.notes p { margin: 1.5pt 0; }
+.signatures { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; margin-top: 8pt; break-inside: avoid; page-break-inside: avoid; }
+.signature { border: 1.1pt solid ${PIN}; border-radius: 9pt; padding: 9pt 11pt; min-height: 80pt; }
+.signature .qui { font-weight: 700; color: ${PIN}; margin-bottom: 4pt; }
+.signature .niveau { font-size: 7pt; color: ${SECONDAIRE}; }
+.signature .nom { margin-top: 6pt; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 12pt; font-weight: 800; color: ${PIN}; }
 .saut { break-before: page; page-break-before: always; }
-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9px; }
-th, td { border: 1px solid ${TRAIT}; padding: 4px 6px; text-align: left; vertical-align: top; }
+table { width: 100%; border-collapse: collapse; margin: 6pt 0; font-size: 8pt; }
+th, td { border: 0.75pt solid ${TRAIT}; padding: 3pt 5pt; text-align: left; vertical-align: top; }
 th { color: ${PIN}; font-weight: 700; }
-h2 { margin: 16px 0 4px 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 800; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
-h3 { margin: 12px 0 3px 0; font-size: 11px; font-weight: 700; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
-h4 { margin: 8px 0 2px 0; font-size: 10.5px; font-weight: 600; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
+h2 { margin: 12pt 0 3pt 0; font-family: 'Bricolage Grotesque', Helvetica, Arial, sans-serif; font-size: 12pt; font-weight: 800; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
+h3 { margin: 9pt 0 2pt 0; font-size: 9.75pt; font-weight: 700; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
+h4 { margin: 7pt 0 2pt 0; font-size: 9.75pt; font-weight: 600; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
 .projet { font-weight: 600; color: ${PIN}; }
 </style></head><body>
 <div class="entete"><div class="marque"><span class="logo">${LOGO}</span>Baillome</div><span class="mono reference">${html(reference)}</span></div>

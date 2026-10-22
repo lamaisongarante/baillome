@@ -24,6 +24,9 @@ export type BienPourCompletude = {
   cuisine: string | null;
   sanitaires: string | null;
   equipements_numeriques: string | null;
+  cuisine_equipements?: string[];
+  salle_eau_equipements?: string[];
+  wc?: string | null;
 };
 
 export type Complements = {
@@ -99,8 +102,8 @@ export function rubriques(bien: BienPourCompletude, c: Complements): EtatRubriqu
     const equipements = [
       rempli(bien.chauffage_mode),
       rempli(bien.eau_chaude_mode),
-      rempli(bien.cuisine),
-      rempli(bien.sanitaires),
+      (bien.cuisine_equipements ?? []).length > 0 || rempli(bien.cuisine),
+      (bien.salle_eau_equipements ?? []).length > 0 || rempli(bien.wc) || rempli(bien.sanitaires),
       rempli(bien.equipements_numeriques),
     ];
     if (estMeuble(bien)) equipements.push(c.mobilierTotal > 0 && c.mobilierCoche >= c.mobilierTotal);

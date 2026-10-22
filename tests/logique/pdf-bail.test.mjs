@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { htmlBail, traiterContrat } from '../../src/lib/pdf/bail.ts';
+import { htmlBail, mentionsACompleter, traiterContrat } from '../../src/lib/pdf/bail.ts';
 
 const dossier = (autres = {}) => ({
   type: 'nu',
@@ -16,8 +16,23 @@ const dossier = (autres = {}) => ({
     sciFamiliale: false,
     telephone: '0612345678',
     email: 'sarah@exemple.test',
+    date_naissance: '1985-04-12',
+    lieu_naissance: 'Toulon',
+    forme_juridique: null,
+    siren: null,
+    representant_legal: null,
   },
-  locataires: [{ prenom: 'Léa', nom: 'Martin', telephone: '0611111111', email: 'lea@exemple.test' }],
+  locataires: [
+    {
+      prenom: 'Léa',
+      nom: 'Martin',
+      telephone: '0611111111',
+      email: 'lea@exemple.test',
+      date_naissance: '1998-02-03',
+      lieu_naissance: 'Lyon',
+      adresse: '8 rue des Lilas, 69003 Lyon',
+    },
+  ],
   colocation: false,
   bien: {
     numero: 1,
@@ -38,7 +53,10 @@ const dossier = (autres = {}) => ({
     chauffage_mode: 'individuel',
     chauffage_repartition: null,
     eau_chaude_mode: 'individuelle',
+    eau_chaude_repartition: null,
+    parties_communes: 'ascenseur, local vélos, espaces verts, interphone',
     dpe_classe: 'D',
+    dpe_date: '2022-03-12',
     dpe_depenses_min_euros: 890,
     dpe_depenses_max_euros: 1250,
     dpe_annee_reference_prix: 2021,
@@ -85,7 +103,9 @@ const dossier = (autres = {}) => ({
     clause_resiliation_troubles: true,
     conditions_particulieres: null,
     niveau_signature: 'avancee',
+    lieu_signature: 'La Valette-du-Var',
   },
+  annexes: { diagnostics: [{ libelle: 'État des risques et pollutions', date: '2026-09-01' }] },
   projet: true,
   ...autres,
 });
@@ -145,8 +165,8 @@ test('bail meublé en colocation : solidarité, forfait, assurance pour compte, 
     fichierContrat: 'contrat-type-meuble-2026-10-01.md',
     colocation: true,
     locataires: [
-      { prenom: 'Léa', nom: 'Martin', telephone: null, email: null },
-      { prenom: 'Tom', nom: 'Petit', telephone: null, email: null },
+      { prenom: 'Léa', nom: 'Martin', telephone: null, email: null, date_naissance: null, lieu_naissance: null, adresse: null },
+      { prenom: 'Tom', nom: 'Petit', telephone: null, email: null, date_naissance: null, lieu_naissance: null, adresse: null },
     ],
   });
   d.bien.servitude_residence_principale = true;
@@ -174,7 +194,9 @@ test('données manquantes : signalées « à compléter » dans le projet, jamai
   d.bailleur.adresse = null;
   const rendu = texteRendu(htmlBail(d));
   assert.ok(rendu.includes('identifiant fiscal du logement : à compléter'));
-  assert.ok(rendu.includes('domicile ou siège social : à compléter'));
+  assert.ok(rendu.includes('Domicile ou siège social : à compléter'));
+  assert.ok(mentionsACompleter(d).includes('Domicile ou siège social du bailleur'));
+  assert.ok(mentionsACompleter(d).includes('identifiant fiscal du logement'));
 });
 
 test('annexes : la notice d’information et l’extrait du règlement de copropriété figurent toujours', () => {
@@ -210,4 +232,52 @@ test('documents imprimables : jamais de citron, fond blanc', async () => {
   assert.ok(!h.includes(couleurs.citron.toUpperCase()));
   assert.ok(!Object.values(couleursDocuments).map((c) => c.toUpperCase()).includes(couleurs.citron.toUpperCase()));
   assert.ok(h.includes(`BACKGROUND: ${couleursDocuments.fond.toUpperCase()}`));
+});
+
+
+test('retour de relecture n° 1 : mise en page A4, sans ligatures, préambule en petit à la fin', () => {
+  const h = htmlBail(dossier());
+  assert.match(h, /@page \{ size: A4; margin: 19mm; \}/);
+  assert.match(h, /font-variant-ligatures: none/);
+  assert.ok(!/letter-spacing: 0\.[1-9]/.test(h), 'aucun espacement des lettres');
+  // Préambule : encadré intitulé, placé après les signatures, avant les notes.
+  const iPreambule = h.indexOf('PRÉAMBULE DU CONTRAT TYPE (TEXTE OFFICIEL)');
+  assert.ok(iPreambule > h.indexOf('class="signatures"'));
+  assert.ok(iPreambule < h.indexOf('class="notes"'));
+  assert.ok(h.indexOf('Champ du contrat type') > iPreambule);
+});
+
+test('retour de relecture n° 1 : parties en deux encadrés, avec les compléments hors contrat type', () => {
+  const rendu = texteRendu(htmlBail(dossier({ fichierNotice: null })));
+  assert.ok(rendu.includes('LE BAILLEUR'));
+  assert.ok(rendu.includes('LE LOCATAIRE'));
+  assert.ok(rendu.includes('Nom et prénom, ou dénomination du bailleur : Sarah Exemple'));
+  assert.ok(rendu.includes('Domicile ou siège social : 5 avenue des Pins'));
+  assert.ok(rendu.includes('Adresse électronique (facultatif) : sarah@exemple.test'));
+  assert.ok(rendu.includes('COMPLÉMENTS (HORS CONTRAT TYPE)'));
+  assert.ok(rendu.includes('Date et lieu de naissance : le 12/04/1985 à Toulon'));
+  assert.ok(rendu.includes('Adresse actuelle : 8 rue des Lilas, 69003 Lyon'));
+  assert.ok(rendu.includes('(2) désigné (s) ci-après le bailleur ;'));
+});
+
+test('retour de relecture n° 1 : répartition en collectif, parties communes, équipements, documents joints, lieu', () => {
+  const d = dossier({ fichierNotice: null });
+  d.bien.chauffage_mode = 'collectif';
+  d.bien.chauffage_repartition = 'tantièmes de copropriété';
+  d.bien.eau_chaude_mode = 'collective';
+  const rendu = texteRendu(htmlBail(d));
+  assert.ok(rendu.includes('collectif ; répartition de la consommation du locataire : tantièmes de copropriété(4)'));
+  assert.ok(rendu.includes('collective ; répartition de la consommation du locataire : à compléter (5)'));
+  assert.ok(rendu.includes('D. Le cas échéant, Enumération des locaux, parties, équipements et accessoires de l\'immeuble à usage commun : ascenseur, local vélos'));
+  assert.ok(rendu.includes('DOCUMENTS JOINTS diagnostic de performance énergétique du 12/03/2022 ; État des risques et pollutions du 01/09/2026'));
+  assert.ok(rendu.includes('à La Valette-du-Var'));
+  // La mention manquante est signalée : pas d'envoi à la signature.
+  assert.deepEqual(mentionsACompleter(d), ['modalité de production d\'eau chaude sanitaire']);
+});
+
+test('retour de relecture n° 1 : copropriété sans parties communes renseignées → à compléter', () => {
+  const d = dossier({ fichierNotice: null });
+  d.bien.parties_communes = null;
+  d.bail.lieu_signature = null;
+  assert.deepEqual(mentionsACompleter(d), ['D. Le cas échéant, Enumération des locaux, parties, équipements et accessoires de l\'immeuble à usage commun', 'Lieu de signature']);
 });

@@ -6,6 +6,7 @@ import {
   versionApplicable,
   CONTRATS_TYPES,
   NOTICES,
+  dernierIrlPublie,
   type Controle,
 } from '@moteur/bail';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
@@ -16,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PilulesChoix } from '@/components/choix';
 import { BoutonPrincipal, CaseACocher, Champ, MessageErreur, MessageInfo } from '@/components/formulaire';
 import { Icone } from '@/components/icones';
-import { chargerDossierBail, enregistrerConditions, type ConditionsBail, type DossierBail } from '@/lib/baux';
+import { chargerDossierBail, enregistrerConditions, zoneTendueALaDate, type ConditionsBail, type DossierBail } from '@/lib/baux';
 import { genererEtPartagerBail } from '@/lib/pdf/generer-bail';
 import { LIBELLES_TYPE_BAIL, estColocation } from '@/lib/personnes';
 import { formaterDateEnCours, lireDateFrancaise, lireEntier, lireNombre, versDateFrancaise, versTexteNombre } from '@/lib/saisie';
@@ -50,6 +51,8 @@ export default function EcranBail() {
   const [b, setB] = useState<ConditionsBail | null>(null);
   const [textes, setTextes] = useState<Partial<Record<ChampTexte, string>>>({});
   const [servitude, setServitude] = useState(false);
+  // Liste officielle des zones tendues applicable à la date de prise d'effet : [date, réponse].
+  const [zoneOfficielle, setZoneOfficielle] = useState<[string, boolean | null] | null>(null);
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enregistre, setEnregistre] = useState(false);
@@ -60,7 +63,11 @@ export default function EcranBail() {
     chargerDossierBail(id).then((d) => {
       setDossier(d);
       if (!d) return;
-      setB(d.bail);
+      const aujourdhui = new Date().toISOString().slice(0, 10);
+      // Trimestre de l'IRL proposé par défaut : le dernier publié à la signature (R-02).
+      const signature = d.bail.date_effet && d.bail.date_effet < aujourdhui ? d.bail.date_effet : aujourdhui;
+      const defaut = dernierIrlPublie(d.indicesIrl, signature);
+      setB(d.bail.trimestre_irl || d.bail.clause_revision === false || !defaut ? d.bail : { ...d.bail, trimestre_irl: defaut.trimestre });
       setServitude(d.bien.servitude_residence_principale);
       const t: Partial<Record<ChampTexte, string>> = {};
       for (const k of MONTANTS) t[k] = versTexteNombre(d.bail[k]);
@@ -78,6 +85,19 @@ export default function EcranBail() {
   // Valeurs converties, pour les contrôles en direct.
   const courant = useMemo(() => (b ? convertir(b, textes) : null), [b, textes]);
 
+  // Zone tendue : liste applicable à la date de prise d'effet (R-09), recherchée à chaque changement de date.
+  const dateEffet = courant?.valeurs.date_effet ?? null;
+  const codeInsee = dossier?.bien.code_insee ?? null;
+  useEffect(() => {
+    if (!dateEffet) return;
+    zoneTendueALaDate(codeInsee, dateEffet).then((z) => {
+      setZoneOfficielle([dateEffet, z]);
+      // Réponse proposée d'après la liste, tant que le bailleur n'a pas répondu.
+      setB((actuel) => (actuel && actuel.soumis_evolution_relocation === null && z !== null ? { ...actuel, soumis_evolution_relocation: z } : actuel));
+    });
+  }, [dateEffet, codeInsee]);
+  const zoneALaDate = zoneOfficielle && zoneOfficielle[0] === dateEffet ? zoneOfficielle[1] : null;
+
   const controles: Controle[] = useMemo(() => {
     if (!dossier || !courant || !dossier.parametresR03) return [];
     const liste = controlerBail({
@@ -90,10 +110,11 @@ export default function EcranBail() {
         tousEtudiants: dossier.locataires.length > 0 && dossier.locataires.every((l) => l.etudiant),
       },
       parametresR03: dossier.parametresR03,
+      zoneTendueOfficielle: zoneALaDate,
     });
     // Les formulations encore à valider ne s'affichent qu'en mode aperçu.
     return liste.filter((c) => !c.aValider || dossier.apercu);
-  }, [dossier, courant]);
+  }, [dossier, courant, zoneALaDate]);
 
   if (dossier === null) {
     return (
@@ -120,6 +141,8 @@ export default function EcranBail() {
   });
 
   const type = b.type_bail;
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const irlDefaut = dernierIrlPublie(dossier.indicesIrl, dateEffet && dateEffet < aujourdhui ? dateEffet : aujourdhui);
   const habitation = type !== 'garage';
   const plusieurs = dossier.locataires.length > 1;
   const coloc = estColocation(dossier.locataires.length, b.locataires_couple);
@@ -249,6 +272,15 @@ export default function EcranBail() {
               <>
                 <Text style={styles.question}>Logement en zone tendue, soumis au plafond d’évolution du loyer à la relocation ?</Text>
                 <OuiNon valeur={b.soumis_evolution_relocation} onChange={(v) => maj('soumis_evolution_relocation', v)} />
+                {dateEffet ? (
+                  <Text style={styles.aide}>
+                    {zoneALaDate === null
+                      ? 'Baillome ne dispose pas de la liste officielle applicable à cette date : vérifiez vous-même.'
+                      : `D’après la liste officielle applicable au ${versDateFrancaise(dateEffet)} (${
+                          dateEffet < '2027-01-01' ? 'décret n° 2013-392' : 'décret n° 2026-831'
+                        }), ${dossier.bien.commune ?? 'la commune'} ${zoneALaDate ? 'figure' : 'ne figure pas'} parmi les communes concernées.`}
+                  </Text>
+                ) : null}
                 <Text style={styles.sousTitre}>Loyer du précédent locataire</Text>
                 <Text style={styles.aide}>À indiquer s’il a quitté le logement moins de dix-huit mois avant la signature.</Text>
                 <Champ libelle="Dernier loyer acquitté (€)" {...champ('precedent_loyer')} />
@@ -271,6 +303,11 @@ export default function EcranBail() {
                   onChange={(v) => maj('trimestre_irl', Number(v))}
                   options={[...TRIMESTRES]}
                 />
+                {irlDefaut ? (
+                  <Text style={styles.aide}>
+                    {`Par défaut, le dernier indice publié à la signature : ${TRIMESTRES[irlDefaut.trimestre - 1].libelle} trimestre ${irlDefaut.annee} (paru le ${versDateFrancaise(irlDefaut.parution_jo)}). Vous pouvez en choisir un autre si votre bail le prévoit.`}
+                  </Text>
+                ) : null}
                 <Champ
                   libelle="Date de révision (facultatif)"
                   {...champ('date_revision', 'date')}
@@ -440,6 +477,13 @@ export default function EcranBail() {
           </Section>
 
           <Section numero="" titre="Signature électronique">
+            <Champ
+              libelle="Lieu de signature"
+              value={b.lieu_signature ?? ''}
+              onChangeText={(t) => maj('lieu_signature', t || null)}
+              placeholder={dossier.bien.commune ?? 'Ville'}
+              aide="La date sera celle de la signature électronique."
+            />
             <PilulesChoix
               libelleGroupe="Niveau de signature"
               valeur={b.niveau_signature}

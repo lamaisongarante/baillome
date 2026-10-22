@@ -9,7 +9,8 @@
 //
 // Fonctions pures, testées dans tests/logique/pdf-bail.test.mjs.
 import { TEXTES_OFFICIELS } from '../../contenus/textes-officiels.ts';
-import { champ, dateFr, euros, html, page } from './commun.ts';
+import { couleursDpe } from '../../theme/tokens.ts';
+import { PIN, champ, dateFr, euros, html, page } from './commun.ts';
 import { htmlNotice } from './notice.ts';
 
 export type DonneesBail = {
@@ -25,8 +26,23 @@ export type DonneesBail = {
     sciFamiliale: boolean;
     telephone: string | null;
     email: string | null;
+    /** Compléments de pratique professionnelle, hors contrat type (facultatifs). */
+    date_naissance: string | null;
+    lieu_naissance: string | null;
+    forme_juridique: string | null;
+    siren: string | null;
+    representant_legal: string | null;
   };
-  locataires: { prenom: string | null; nom: string; telephone: string | null; email: string | null }[];
+  locataires: {
+    prenom: string | null;
+    nom: string;
+    telephone: string | null;
+    email: string | null;
+    /** Compléments hors contrat type (facultatifs). */
+    date_naissance: string | null;
+    lieu_naissance: string | null;
+    adresse: string | null;
+  }[];
   colocation: boolean;
   bien: {
     numero: number;
@@ -47,7 +63,10 @@ export type DonneesBail = {
     chauffage_mode: 'individuel' | 'collectif' | null;
     chauffage_repartition: string | null;
     eau_chaude_mode: 'individuelle' | 'collective' | null;
+    eau_chaude_repartition: string | null;
+    parties_communes: string | null;
     dpe_classe: string | null;
+    dpe_date: string | null;
     dpe_depenses_min_euros: number | null;
     dpe_depenses_max_euros: number | null;
     dpe_annee_reference_prix: number | null;
@@ -94,7 +113,10 @@ export type DonneesBail = {
     clause_resiliation_troubles: boolean;
     conditions_particulieres: string | null;
     niveau_signature: 'avancee' | 'qualifiee';
+    lieu_signature: string | null;
   };
+  /** Documents réellement joints, tirés de la fiche du bien et du coffre (XI). */
+  annexes: { diagnostics: { libelle: string; date: string | null }[] };
   /** Bail non encore validé par Sarah et l'avocat : mention « projet » sur chaque page. */
   projet: boolean;
 };
@@ -241,7 +263,12 @@ function regles(): Regle[] {
     { debut: '- modalité de production chauffage', remplir: chauffage },
     {
       debut: "- modalité de production d'eau chaude sanitaire",
-      remplir: ({ bien }) => bien.eau_chaude_mode ?? 'à compléter',
+      remplir: ({ bien }) => {
+        if (!bien.eau_chaude_mode) return 'à compléter';
+        if (bien.eau_chaude_mode === 'individuelle') return 'individuelle';
+        // Note (5) : préciser les modalités de répartition de la consommation du locataire.
+        return `collective ; répartition de la consommation du locataire : ${bien.eau_chaude_repartition?.trim() || 'à compléter'}`;
+      },
     },
     {
       debut: '- niveau de performance du logement',
@@ -263,7 +290,11 @@ function regles(): Regle[] {
               .join(' ; ')
           : 'omettre',
     },
-    { debut: 'd. le cas échéant enumération des locaux', remplir: () => 'omettre' },
+    {
+      debut: 'd. le cas échéant enumération des locaux',
+      remplir: ({ bien }) =>
+        bien.parties_communes?.trim() || (bien.regime_juridique === 'copropriete' || bien.type_habitat === 'collectif' ? 'à compléter' : 'omettre'),
+    },
     {
       debut: "e. le cas échéant equipement d'accès aux technologies",
       remplir: ({ bien }) => bien.equipements_numeriques?.trim() || 'omettre',
@@ -479,9 +510,9 @@ function regles(): Regle[] {
 
 function chauffage({ bien }: DonneesBail): Remplissage {
   if (!bien.chauffage_mode) return 'à compléter';
-  return bien.chauffage_mode === 'collectif' && bien.chauffage_repartition
-    ? `collectif ; répartition de la consommation du locataire : ${bien.chauffage_repartition}`
-    : bien.chauffage_mode;
+  if (bien.chauffage_mode === 'individuel') return 'individuel';
+  // Note (4) : préciser les modalités de répartition de la consommation du locataire.
+  return `collectif ; répartition de la consommation du locataire : ${bien.chauffage_repartition?.trim() || 'à compléter'}`;
 }
 function assuranceAnnuelle({ bail }: DonneesBail): Remplissage {
   return bail.assurance_pour_compte && bail.assurance_montant_annuel ? euros(bail.assurance_montant_annuel) : 'omettre';
@@ -578,6 +609,84 @@ export function traiterContrat(d: DonneesBail): LigneTraitee[] {
   return resultat;
 }
 
+/** Mentions restées « à compléter » : le projet peut être généré, jamais envoyé à la signature. */
+export function mentionsACompleter(d: DonneesBail): string[] {
+  const manquantes = traiterContrat(d)
+    .filter((l) => l.rendu === 'remplie' && l.html.includes('à compléter'))
+    .map((l) =>
+      l.source.startsWith('- [nom et prénom, ou dénomination du bailleur')
+        ? 'Domicile ou siège social du bailleur'
+        : l.source.replace(/^[-–]\s*/, '').split(/\s*:\s*\[|\s\[/)[0].replace(/\s*:$/, '').trim(),
+    );
+  if (!d.bail.lieu_signature?.trim()) manquantes.push('Lieu de signature');
+  return manquantes;
+}
+
+const QUALITES = { personne_physique: 'personne physique', personne_morale: 'personne morale' } as const;
+
+const ligne = (libelle: string, valeur: string) => `<div class="ligne"><span class="libelle">${html(libelle)} :</span> ${champ(valeur)}</div>`;
+const naissance = (date: string | null, lieu: string | null) =>
+  date || lieu ? [date ? `le ${dateFr(date)}` : null, lieu ? `à ${lieu}` : null].filter(Boolean).join(' ') : null;
+
+/** Partie I : deux encadrés « Le bailleur » et « Le locataire » (maquette Bail-Editorial). */
+function parties(d: DonneesBail, ligneBailleur: string, ligneLocataire: string): string {
+  const b = d.bailleur;
+  // Libellés repris des crochets du contrat type (« nom et prénom, ou dénomination du bailleur / domicile… »).
+  const [lNom, lDomicile, , lPortable, lEmail] = ligneBailleur.slice(ligneBailleur.indexOf('[') + 1, ligneBailleur.lastIndexOf(']')).split(' / ');
+  const suiteBailleur = ligneBailleur.slice(ligneBailleur.lastIndexOf(']') + 1).trim();
+  const suiteLocataire = ligneLocataire.slice(ligneLocataire.lastIndexOf(']') + 1).trim();
+  const majuscule = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+  const caseQualite = (q: keyof typeof QUALITES) =>
+    `<span class="option"><span class="case${b.qualite === q ? ' cochee' : ''}"></span>${QUALITES[q]}${q === 'personne_morale' ? ' (1)' : ''}</span>`;
+
+  const complementsBailleur = [
+    naissance(b.date_naissance, b.lieu_naissance) && b.qualite === 'personne_physique'
+      ? ligne('Date et lieu de naissance', naissance(b.date_naissance, b.lieu_naissance)!)
+      : null,
+    b.forme_juridique ? ligne('Forme juridique', b.forme_juridique) : null,
+    b.siren ? ligne('Immatriculation (SIREN)', b.siren) : null,
+    b.representant_legal ? ligne('Représentant légal', b.representant_legal) : null,
+  ].filter(Boolean);
+
+  const bailleur = `<div class="encadre partie-encadre"><div class="mono etiquette">LE BAILLEUR</div>
+${ligne(majuscule(lNom), b.nom)}
+${ligne(majuscule(lDomicile), b.adresse || 'à compléter')}
+<div class="ligne"><span class="libelle">Qualité du bailleur :</span> ${caseQualite('personne_physique')} ${caseQualite('personne_morale')}${
+    b.qualite === 'personne_morale' && b.sciFamiliale
+      ? ` — ${champ('société civile constituée exclusivement entre parents et alliés jusqu’au quatrième degré inclus')}`
+      : ''
+  }</div>
+${b.telephone ? ligne(majuscule(lPortable), telephone(b.telephone)) : ''}
+${b.email ? ligne(majuscule(lEmail), b.email) : ''}
+${complementsBailleur.length ? `<div class="complements"><div class="mono etiquette">COMPLÉMENTS (HORS CONTRAT TYPE)</div>${complementsBailleur.join('')}</div>` : ''}
+<div class="designe">${html(suiteBailleur)}</div></div>`;
+
+  const locataires = d.locataires
+    .map((l) => {
+      const complements = [
+        naissance(l.date_naissance, l.lieu_naissance) ? ligne('Date et lieu de naissance', naissance(l.date_naissance, l.lieu_naissance)!) : null,
+        l.adresse ? ligne('Adresse actuelle', l.adresse) : null,
+      ].filter(Boolean);
+      return `<div class="personne">${ligne('Nom et prénom', nomComplet(l))}
+${l.telephone ? ligne('Numéro de téléphone portable (facultatif)', telephone(l.telephone)) : ''}
+${l.email ? ligne('Adresse électronique (facultatif)', l.email) : ''}
+${complements.length ? `<div class="complements"><div class="mono etiquette">COMPLÉMENTS (HORS CONTRAT TYPE)</div>${complements.join('')}</div>` : ''}</div>`;
+    })
+    .join('');
+  const locataire = `<div class="encadre partie-encadre"><div class="mono etiquette">${d.locataires.length > 1 ? 'LES LOCATAIRES' : 'LE LOCATAIRE'}</div>
+${locataires}<div class="designe">${html(suiteLocataire)}</div></div>`;
+  return `<div class="deux-colonnes">${bailleur}${locataire}</div>`;
+}
+
+/** Étiquette de la classe DPE, entourée de sa couleur officielle (trait, sans aplat). */
+function etiquetteDpe(classe: string | null): string {
+  const c = (couleursDpe as Record<string, { fond: string; texte: string }>)[classe ?? ''];
+  const bordure = c?.fond ?? PIN;
+  // Classes claires (C, D, E) : lettre dans la couleur foncée de l'étiquette officielle, lisible sur fond blanc.
+  const lettre = !c ? PIN : c.texte === couleursDpe.A.texte ? c.fond : c.texte;
+  return `<div class="dpe"><span class="mono">CLASSE<br>DU DPE</span><span class="lettre" style="color: ${lettre}; border-color: ${bordure}">${html(classe ?? '?')}</span></div>`;
+}
+
 /** Bail complet, prêt à imprimer. */
 export function htmlBail(d: DonneesBail): string {
   const lignes = traiterContrat(d);
@@ -590,14 +699,55 @@ export function htmlBail(d: DonneesBail): string {
 <h1>${titre.html}</h1>${d.projet ? '<div class="mono sur-titre projet">PROJET À RELIRE · NON SIGNÉ</div>' : ''}</div>
 <div class="mono loi">${sousTitre.html}</div></div>`);
 
-  for (const l of suite.filter((x) => x.rendu !== 'omise')) {
+  const visibles = suite.filter((x) => x.rendu !== 'omise');
+  // Préambule du contrat type : texte officiel reproduit en petit, à la fin du bail.
+  const debutParties = visibles.findIndex((l) => /^I\.\s/.test(l.source));
+  const preambule = visibles.slice(0, debutParties);
+  const contenu = visibles.slice(debutParties);
+
+  let encadreDpe: string[] | null = null;
+  // II. A : caractéristiques du logement en deux colonnes (maquette), les plus longues sur toute la largeur.
+  let grille: string[] | null = null;
+  for (const l of contenu) {
     const s = l.source;
+    if (s.startsWith('- localisation du logement')) grille = [];
+    if (grille && s.startsWith('- rappel : un logement décent')) {
+      corps.push(`<div class="grille">${grille.join('')}</div>`);
+      grille = null;
+    }
+    if (grille) {
+      const texte = l.html.replace(/<[^>]+>/g, '');
+      grille.push(`<p class="tiret${texte.length > 60 ? ' large' : ''}">${l.html}</p>`);
+      continue;
+    }
+    // Partie I : les deux encadrés remplacent les deux lignes de désignation.
+    if (s.startsWith('- [nom et prénom, ou dénomination du bailleur')) {
+      const locataire = contenu.find((x) => x.source.startsWith('- [nom et prénom du ou des locataires'));
+      corps.push(parties(d, s, locataire?.source ?? ''));
+      continue;
+    }
+    if (s.startsWith('- [nom et prénom du ou des locataires')) continue;
+    // Rappel des niveaux de performance et classe du logement : un encadré, avec l'étiquette DPE.
+    if (s.startsWith('- rappel : un logement décent')) encadreDpe = [];
+    if (encadreDpe) {
+      encadreDpe.push(`<p${s.startsWith('-') ? ' class="tiret"' : ''}>${l.html}</p>`);
+      if (s.startsWith('- niveau de performance du logement')) {
+        corps.push(`<div class="encadre-fort rappel"><div class="rappel-texte">${encadreDpe.join('')}</div>${etiquetteDpe(d.bien.dpe_classe)}</div>`);
+        encadreDpe = null;
+      }
+      continue;
+    }
     if (/^Le \[date\]/.test(s)) {
-      corps.push(`<p>${remplacer(s, ['……………………', '……………………'])}</p>`);
+      corps.push(`<p>${remplacer(s, ['……………… (date de la signature électronique)', d.bail.lieu_signature?.trim() || 'à compléter'])}</p>`);
       continue;
     }
     if (/^Signature du bailleur/.test(s)) {
       corps.push(signatures(d));
+      if (preambule.length) {
+        corps.push(`<div class="preambule"><div class="mono etiquette">PRÉAMBULE DU CONTRAT TYPE (TEXTE OFFICIEL)</div>${preambule
+          .map((p) => `<p${p.source.startsWith('-') ? ' class="tiret"' : ''}>${p.html}</p>`)
+          .join('')}</div>`);
+      }
       continue;
     }
     if (/^\(\d+\)\s/.test(s)) {
@@ -614,6 +764,21 @@ export function htmlBail(d: DonneesBail): string {
       corps.push(`<div class="rubrique">${l.html}</div>`);
     } else {
       corps.push(`<p${s.startsWith('-') ? ' class="tiret"' : ''}>${l.html}</p>`);
+    }
+    // XI. B : documents réellement joints au dossier de diagnostic technique.
+    if (s.startsWith('- le cas échéant, un état des risques naturels et technologiques')) {
+      const docs = [
+        d.bien.dpe_classe ? `diagnostic de performance énergétique${d.bien.dpe_date ? ` du ${dateFr(d.bien.dpe_date)}` : ''}` : null,
+        ...d.annexes.diagnostics.map((x) => `${x.libelle}${x.date ? ` du ${dateFr(x.date)}` : ''}`),
+      ].filter((x): x is string => !!x);
+      corps.push(
+        `<div class="joints"><span class="mono etiquette">DOCUMENTS JOINTS</span> ${docs.length ? docs.map((x) => html(x)).join(' ; ') : 'aucun document enregistré dans le coffre'}</div>`,
+      );
+    }
+    if (s.startsWith('C. Une notice d’information') || s.startsWith("C. Une notice d'information")) {
+      corps.push(
+        `<div class="joints"><span class="mono etiquette">DOCUMENT JOINT</span> ${d.fichierNotice ? 'notice d’information reproduite ci-après' : 'notice à joindre'}</div>`,
+      );
     }
   }
 

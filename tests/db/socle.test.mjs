@@ -286,14 +286,14 @@ describe('données de référence', () => {
     ['2A004', 'Ajaccio'],
     ['97411', 'Saint-Denis'],
   ]) {
-    test(`R-09 : ${commune} (${code}) figure dans la liste`, async () => {
-      const { rows } = await enTantQue(db, alice, 'select commune from communes_zone_tendue where code_insee = $1', [code]);
+    test(`R-09 : ${commune} (${code}) figure dans la liste du décret n° 2026-831`, async () => {
+      const { rows } = await enTantQue(db, alice, `select commune from communes_zone_tendue where code_insee = $1 and source like 'Décret n° 2026-831%'`, [code]);
       assert.deepEqual(rows, [{ commune }]);
     });
   }
 
   test('R-09 : une commune hors liste n’y figure pas (Draguignan oui, Brignoles non)', async () => {
-    const { rows } = await enTantQue(db, alice, `select code_insee from communes_zone_tendue where code_insee in ('83050', '83023')`);
+    const { rows } = await enTantQue(db, alice, `select code_insee from communes_zone_tendue where code_insee in ('83050', '83023') and source like 'Décret n° 2026-831%'`);
     assert.deepEqual(rows, [{ code_insee: '83050' }]);
   });
 
@@ -424,5 +424,24 @@ describe('suppression du compte', () => {
       [alice, bruno],
     );
     assert.deepEqual(rows[0], { biens_alice: 0, entites_alice: 0, profil_alice: 0, biens_bruno: 1 });
+  });
+});
+
+describe('zones tendues selon la date du bail', () => {
+  test('La Valette-du-Var : décret n° 2013-392 en 2026, décret n° 2026-831 à partir de 2027 ; avant le 24/12/2025, aucune liste', async () => {
+    const aLaDate = async (jour) =>
+      (
+        await enTantQue(
+          db,
+          alice,
+          `select source from communes_zone_tendue where code_insee = '83144' and date_entree_vigueur <= $1 and (date_fin is null or date_fin > $1)`,
+          [jour],
+        )
+      ).rows.map((r) => r.source.slice(0, 22));
+    assert.deepEqual(await aLaDate('2026-10-22'), ['Décret n° 2013-392 du ']);
+    assert.deepEqual(await aLaDate('2027-01-01'), ['Décret n° 2026-831 du ']);
+    assert.deepEqual(await aLaDate('2025-06-01'), []);
+    const { rows } = await enTantQue(db, alice, `select min(date_entree_vigueur)::text as premiere from communes_zone_tendue`);
+    assert.equal(rows[0].premiere, '2025-12-24');
   });
 });

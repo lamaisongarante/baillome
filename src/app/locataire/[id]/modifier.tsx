@@ -42,6 +42,9 @@ export default function ModifierLocataire() {
   const [nom, setNom] = useState('');
   const [telephone, setTelephone] = useState('');
   const [email, setEmail] = useState('');
+  const [adresse, setAdresse] = useState('');
+  const [naissance, setNaissance] = useState('');
+  const [lieuNaissance, setLieuNaissance] = useState('');
   const [etudiant, setEtudiant] = useState(false);
   const [apprenti, setApprenti] = useState(false);
   const [boursier, setBoursier] = useState(false);
@@ -78,6 +81,9 @@ export default function ModifierLocataire() {
       setNom(p.nom);
       setTelephone(afficherTelephone(p.telephone));
       setEmail(p.email ?? '');
+      setAdresse(p.adresse ?? '');
+      setNaissance(versDateFrancaise(p.date_naissance));
+      setLieuNaissance(p.lieu_naissance ?? '');
       setEtudiant(p.etudiant);
       setApprenti(p.apprenti);
       setBoursier(!!p.boursier);
@@ -109,6 +115,8 @@ export default function ModifierLocataire() {
     const mail = lireEmail(email);
     if (mail === undefined) return setErreur('Cette adresse email ne semble pas valide.');
     if (accordEmail && !mail) return setErreur('Pour envoyer les documents par email, indiquez l’adresse email du locataire.');
+    const dateNaissance = naissance.trim() ? lireDateFrancaise(naissance) : null;
+    if (naissance.trim() && !dateNaissance) return setErreur('La date de naissance doit être au format JJ/MM/AAAA.');
     let dateIso: string | null = null;
     if (bailASaisir) {
       dateIso = lireDateFrancaise(dateEntree);
@@ -122,6 +130,9 @@ export default function ModifierLocataire() {
       nom: nom.trim(),
       telephone: tel,
       email: mail,
+      adresse: adresse.trim() || null,
+      date_naissance: dateNaissance,
+      lieu_naissance: lieuNaissance.trim() || null,
       etudiant,
       apprenti,
       boursier: etudiant ? boursier : null,
@@ -208,6 +219,22 @@ export default function ModifierLocataire() {
             autoCorrect={false}
             textContentType="emailAddress"
           />
+          <Champ
+            libelle="Adresse actuelle (facultatif)"
+            value={adresse}
+            onChangeText={setAdresse}
+            textContentType="fullStreetAddress"
+            aide="Son adresse avant l’entrée dans les lieux. Elle complète la désignation des parties."
+          />
+          <Champ
+            libelle="Date de naissance (facultatif)"
+            value={naissance}
+            onChangeText={(t) => setNaissance(formaterDateEnCours(t))}
+            keyboardType="number-pad"
+            placeholder="JJ/MM/AAAA"
+            maxLength={10}
+          />
+          <Champ libelle="Lieu de naissance (facultatif)" value={lieuNaissance} onChangeText={setLieuNaissance} />
           <CaseACocher
             cochee={accordEmail}
             onChange={setAccordEmail}

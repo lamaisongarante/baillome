@@ -397,8 +397,8 @@ describe('cas particuliers', () => {
     assert.equal(codeInseeCommune('83144'), '83144');
   });
 
-  test('R-09 : La Valette-du-Var est dans la liste à partir du 1er janvier 2027, pas avant', () => {
+  test('R-09 : La Valette-du-Var est en zone tendue depuis le 24/12/2025 (décret n° 2013-392) et à partir de 2027 (décret n° 2026-831)', () => {
     const l = D.zoneTendue.filter((z) => z.code_insee === '83144');
-    assert.deepEqual(l.map((z) => z.debut), ['2027-01-01']);
+    assert.deepEqual(l.map((z) => z.debut).sort(), ['2025-12-24', '2027-01-01']);
   });
 });

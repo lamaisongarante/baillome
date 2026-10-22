@@ -1,6 +1,7 @@
 // Chargement et enregistrement des conditions d'un bail, avec ce qu'il faut
 // pour les contrôles (fiche du bien, qualité du bailleur, locataires, R-03).
-import { qualitePourDuree, type ParametresR03, type QualiteDuree, type TypeBail } from '@moteur/bail';
+import { qualitePourDuree, type IndiceIrl, type ParametresR03, type QualiteDuree, type TypeBail } from '@moteur/bail';
+import { codeInseeCommune } from '@moteur/moteur';
 
 import { supabase } from '@/lib/supabase';
 
@@ -18,7 +19,7 @@ export const COLONNES_CONDITIONS = [
   'depot_garantie', 'clause_solidarite', 'clause_resiliation_assurance', 'clause_resiliation_troubles',
   'conditions_particulieres', 'niveau_signature', 'modele_version', 'notice_version',
   'vehicule', 'rangement_autorise', 'preavis_mois', 'icc_trimestre', 'icc_annee', 'icc_indice',
-  'delai_restitution_jours', 'clause_vente',
+  'delai_restitution_jours', 'clause_vente', 'lieu_signature',
 ].join(', ');
 
 export type ConditionsBail = {
@@ -76,6 +77,7 @@ export type ConditionsBail = {
   icc_indice: number | null;
   delai_restitution_jours: number | null;
   clause_vente: boolean;
+  lieu_signature: string | null;
 };
 
 export type DossierBail = {
@@ -87,11 +89,14 @@ export type DossierBail = {
     surface_habitable: number | null;
     identifiant_fiscal: string | null;
     servitude_residence_principale: boolean;
+    code_insee: string | null;
   };
   qualite: QualiteDuree;
   locataires: { id: string; prenom: string | null; nom: string; etudiant: boolean }[];
   parametresR03: ParametresR03 | null;
   apercu: boolean;
+  /** Indices IRL publiés (série métropolitaine). */
+  indicesIrl: IndiceIrl[];
 };
 
 export async function chargerDossierBail(id: string): Promise<DossierBail | null> {
@@ -99,10 +104,10 @@ export async function chargerDossierBail(id: string): Promise<DossierBail | null
   if (!bail) return null;
   const b = bail as unknown as ConditionsBail;
   const aujourdhui = new Date().toISOString().slice(0, 10);
-  const [bien, locataires, r03, profil] = await Promise.all([
+  const [bien, locataires, r03, profil, irl] = await Promise.all([
     supabase
       .from('biens')
-      .select('id, numero, commune, surface_habitable, identifiant_fiscal, servitude_residence_principale, entites (type, sci_familiale)')
+      .select('id, numero, commune, code_insee, surface_habitable, identifiant_fiscal, servitude_residence_principale, entites (type, sci_familiale)')
       .eq('id', b.bien_id)
       .single(),
     supabase.from('baux_locataires').select('ordre, personnes (id, prenom, nom, etudiant)').eq('bail_id', id).order('ordre'),
@@ -113,6 +118,7 @@ export async function chargerDossierBail(id: string): Promise<DossierBail | null
       .lte('date_effet', aujourdhui)
       .order('date_effet', { ascending: false }),
     supabase.from('profils').select('apercu_regles').maybeSingle(),
+    supabase.from('indices_irl').select('annee, trimestre, valeur, parution_jo').eq('zone', 'metropole'),
   ]);
   if (!bien.data) return null;
   const entite = bien.data.entites as unknown as { type: string; sci_familiale: boolean } | null;
@@ -125,7 +131,32 @@ export async function chargerDossierBail(id: string): Promise<DossierBail | null
     locataires: (locataires.data ?? []).map((l) => l.personnes as unknown as DossierBail['locataires'][number]),
     parametresR03: (version?.parametres as ParametresR03 | undefined) ?? null,
     apercu: !!profil.data?.apercu_regles,
+    indicesIrl: (irl.data ?? []) as IndiceIrl[],
   };
+}
+
+/**
+ * Commune du bien dans la liste des zones tendues applicable à une date
+ * (décret n° 2013-392 jusqu'au 31/12/2026, n° 2026-831 ensuite). Null si aucune
+ * liste stockée ne couvre la date ou si la commune n'est pas connue.
+ */
+export async function zoneTendueALaDate(codeInsee: string | null, date: string): Promise<boolean | null> {
+  if (!codeInsee) return null;
+  const { data: couverture } = await supabase
+    .from('communes_zone_tendue')
+    .select('date_entree_vigueur')
+    .lte('date_entree_vigueur', date)
+    .or(`date_fin.is.null,date_fin.gt.${date}`)
+    .limit(1);
+  if (!couverture?.length) return null;
+  const { data } = await supabase
+    .from('communes_zone_tendue')
+    .select('code_insee')
+    .eq('code_insee', codeInseeCommune(codeInsee))
+    .lte('date_entree_vigueur', date)
+    .or(`date_fin.is.null,date_fin.gt.${date}`)
+    .limit(1);
+  return (data?.length ?? 0) > 0;
 }
 
 /** Enregistre les conditions (sans l'identifiant, le bien ni le statut). */
