@@ -144,8 +144,8 @@ export default function EcranLocataire() {
             <>
               <Text style={styles.carteTitre}>Aucune attestation enregistrée</Text>
               <Text style={styles.texteDoux}>
-                Votre locataire doit s’assurer contre les risques locatifs et vous en justifier chaque année. Ajoutez son
-                attestation dans la fiche du bien, rubrique Assurances.
+                Votre locataire doit s’assurer contre les risques locatifs et vous en justifier à la remise des clés, puis
+                chaque année à votre demande. Ajoutez son attestation dans la fiche du bien, rubrique Assurances.
               </Text>
             </>
           )}

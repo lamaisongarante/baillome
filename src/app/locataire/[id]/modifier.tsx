@@ -89,6 +89,14 @@ export default function ModifierLocataire() {
     });
   }, [id, nouveau, bien]);
 
+  // Retour à l'écran précédent, ou à la fiche si on arrive directement ici.
+  function revenir() {
+    if (router.canGoBack()) router.back();
+    else if (!nouveau) router.replace(`/locataire/${id}` as Href);
+    else if (bien) router.replace(`/bien/${bien}` as Href);
+    else router.replace('/');
+  }
+
   // Un deuxième locataire : couple marié ou pacsé, ou colocation (article 8-1, I).
   const questionCouple = nouveau && occupation?.locataires.length === 1;
   const bailASaisir = nouveau ? !occupation : !!bail;
@@ -142,7 +150,7 @@ export default function ModifierLocataire() {
         : null;
     setOccupe(false);
     if (error || erreurBail) return setErreur(ERREUR_RESEAU);
-    router.back();
+    revenir();
   }
 
   function confirmerSuppression() {
@@ -158,7 +166,7 @@ export default function ModifierLocataire() {
             const ok = await supprimerLocataire(id, bail);
             if (!ok) return setErreur('La suppression n’a pas abouti. Vérifiez votre connexion et réessayez.');
             if (bail) router.dismissTo(`/bien/${bail.bien_id}` as Href);
-            else router.back();
+            else router.replace('/');
           },
         },
       ],
@@ -169,7 +177,7 @@ export default function ModifierLocataire() {
     <SafeAreaView style={styles.page} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={styles.page} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.contenu} keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => router.back()} style={styles.retour} accessibilityRole="button" accessibilityLabel="Retour">
+          <Pressable onPress={revenir} style={styles.retour} accessibilityRole="button" accessibilityLabel="Retour">
             <Icone nom="retour" couleur={couleurs.pin} taille={20} epaisseur={2} />
           </Pressable>
           <Text style={styles.titre} accessibilityRole="header">
@@ -219,6 +227,7 @@ export default function ModifierLocataire() {
                 maxLength={10}
                 aide="La date de prise d’effet du bail."
               />
+              <Text style={styles.question}>Type de location</Text>
               <PilulesChoix
                 libelleGroupe="Type de location"
                 valeur={typeBail}

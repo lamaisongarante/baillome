@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -79,6 +79,13 @@ export default function EcranGarant() {
       });
   }, [id, nouveau, locataire]);
 
+  // Retour à l'écran précédent, ou à la fiche du locataire si on arrive directement ici.
+  function revenir() {
+    if (router.canGoBack()) router.back();
+    else if (locataire) router.replace(`/locataire/${locataire}` as Href);
+    else router.replace('/');
+  }
+
   const estVisale = type === 'visale';
   const estPersonne = type === 'personne_physique';
 
@@ -130,7 +137,7 @@ export default function EcranGarant() {
       if (lien.error) await supabase.from('personnes').delete().eq('id', garant.id);
       setOccupe(false);
       if (lien.error) return setErreur(ERREUR_RESEAU);
-      router.back();
+      revenir();
       return;
     }
     const { error } = await supabase.from('personnes').update(champs).eq('id', id);
@@ -139,7 +146,7 @@ export default function EcranGarant() {
       : null;
     setOccupe(false);
     if (error || erreurActe) return setErreur(ERREUR_RESEAU);
-    router.back();
+    revenir();
   }
 
   function confirmerSuppression() {
@@ -151,7 +158,7 @@ export default function EcranGarant() {
         onPress: async () => {
           const { error } = await supabase.from('personnes').delete().eq('id', id);
           if (error) setErreur('La suppression n’a pas abouti. Vérifiez votre connexion et réessayez.');
-          else router.back();
+          else revenir();
         },
       },
     ]);
@@ -161,7 +168,7 @@ export default function EcranGarant() {
     <SafeAreaView style={styles.page} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={styles.page} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.contenu} keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => router.back()} style={styles.retour} accessibilityRole="button" accessibilityLabel="Retour">
+          <Pressable onPress={revenir} style={styles.retour} accessibilityRole="button" accessibilityLabel="Retour">
             <Icone nom="retour" couleur={couleurs.pin} taille={20} epaisseur={2} />
           </Pressable>
           <Text style={styles.titre} accessibilityRole="header">
@@ -169,6 +176,7 @@ export default function EcranGarant() {
           </Text>
           {garanti ? <Text style={styles.aide}>Se porte garant pour {garanti}.</Text> : null}
 
+          <Text style={styles.question}>Qui se porte garant ?</Text>
           <PilulesChoix
             libelleGroupe="Qui se porte garant ?"
             valeur={type}
@@ -178,8 +186,9 @@ export default function EcranGarant() {
 
           {estVisale ? (
             <MessageInfo>
-              La garantie Visale est une caution gratuite accordée sous conditions par Action Logement. Pas d’acte de
-              cautionnement à faire signer : conservez le visa dans le coffre.
+              La garantie Visale est une caution locative gratuite accordée sous certaines conditions par Action Logement
+              (www.visale.fr). Baillome ne prépare pas d’acte de cautionnement pour elle : rangez ses justificatifs dans le
+              coffre.
             </MessageInfo>
           ) : null}
 
@@ -264,6 +273,7 @@ const styles = StyleSheet.create({
   },
   titre: { fontFamily: polices.titreFort, fontSize: 28, letterSpacing: -1.1, lineHeight: 30, color: couleurs.texte },
   aide: { fontFamily: polices.interface, fontSize: 13.5, lineHeight: 19, color: couleurs.texteSecondaire },
+  question: { fontFamily: polices.interfaceGras, fontSize: 15, lineHeight: 21, color: couleurs.texte },
   supprimer: { alignItems: 'center', paddingVertical: 12 },
   supprimerTexte: { fontFamily: polices.interfaceGras, fontSize: 14, color: couleurs.texteCorail },
   bas: { height: 24 },
