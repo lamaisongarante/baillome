@@ -341,6 +341,8 @@ export function blocagesAvantSignature(args: {
   mentionsACompleter: string[];
   /** Natures des diagnostics rangés au coffre pour ce bien (documents.nature_diagnostic). */
   naturesAuCoffre?: string[];
+  /** Personnes physiques qui signent : bailleur, locataires, cautions (date de naissance si connue). */
+  signataires?: { qui: string; date_naissance: string | null }[];
 }): BlocageSignature[] {
   const blocages: BlocageSignature[] = args.mentionsACompleter.map((m) => ({ code: `mention:${m}`, source: 'Bail', libelle: `À compléter : ${m}` }));
   if (args.bien.type_bien !== 'garage' && !args.bien.dpe_classe) {
@@ -357,6 +359,14 @@ export function blocagesAvantSignature(args: {
       }
     }
   }
+  // Âge des signataires (décision de Sarah du 22/10/2026) : aucun envoi si l'un d'eux a
+  // moins de 18 ans à la date de signature.
+  for (const s of args.signataires ?? []) {
+    if (s.date_naissance && ajouterAnsBail(s.date_naissance, AGE_MINIMUM_SIGNATAIRE) > args.aujourdhui) {
+      blocages.push({ code: `age:${s.qui}`, source: 'Bail', libelle: `${s.qui} a moins de ${AGE_MINIMUM_SIGNATAIRE} ans à la date de signature` });
+    }
+  }
+
   // Annexes : chaque diagnostic obligatoire doit être rangé au coffre pour être joint au bail.
   if (args.naturesAuCoffre) {
     const { requis } = diagnosticsRequis({ bien: args.bien, reponses: args.reponses });
@@ -367,6 +377,16 @@ export function blocagesAvantSignature(args: {
     }
   }
   return blocages;
+}
+
+/** Âge minimal des signataires (décision de Sarah du 22/10/2026). */
+export const AGE_MINIMUM_SIGNATAIRE = 18;
+
+/** Date anniversaire, n années après (le 29 février devient le 1er mars). */
+function ajouterAnsBail(dateIso: string, ans: number): string {
+  const [a, m, j] = dateIso.split('-').map(Number);
+  const d = new Date(Date.UTC(a + ans, m - 1, j));
+  return d.toISOString().slice(0, 10);
 }
 
 /** Libellés des diagnostics du dossier de diagnostic technique. */

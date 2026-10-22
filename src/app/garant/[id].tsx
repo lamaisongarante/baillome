@@ -30,6 +30,8 @@ export default function EcranGarant() {
   const [telephone, setTelephone] = useState('');
   const [email, setEmail] = useState('');
   const [visale, setVisale] = useState('');
+  const [naissance, setNaissance] = useState('');
+  const [lieuNaissance, setLieuNaissance] = useState('');
   const [signeLe, setSigneLe] = useState('');
   const [cautionnementId, setCautionnementId] = useState<string | null>(null);
   const [garanti, setGaranti] = useState<string | null>(null);
@@ -62,6 +64,8 @@ export default function EcranGarant() {
         setTelephone(afficherTelephone(p.telephone));
         setEmail(p.email ?? '');
         setVisale(p.visale_reference ?? '');
+        setNaissance(versDateFrancaise(p.date_naissance));
+        setLieuNaissance(p.lieu_naissance ?? '');
       });
     supabase
       .from('cautionnements')
@@ -103,6 +107,8 @@ export default function EcranGarant() {
     if (tel === undefined) return setErreur('Ce numéro de portable ne semble pas complet. Exemple : 06 12 34 56 78.');
     const mail = lireEmail(email);
     if (mail === undefined) return setErreur('Cette adresse email ne semble pas valide.');
+    const dateNaissance = estPersonne && naissance.trim() ? lireDateFrancaise(naissance) : null;
+    if (estPersonne && naissance.trim() && !dateNaissance) return setErreur('La date de naissance doit être au format JJ/MM/AAAA.');
     let dateSignature: string | null = null;
     if (signeLe.trim()) {
       dateSignature = lireDateFrancaise(signeLe);
@@ -117,6 +123,8 @@ export default function EcranGarant() {
       telephone: tel,
       email: mail,
       visale_reference: estVisale ? visale.trim() || null : null,
+      date_naissance: dateNaissance,
+      lieu_naissance: estPersonne ? lieuNaissance.trim() || null : null,
     };
 
     setOccupe(true);
@@ -203,6 +211,19 @@ export default function EcranGarant() {
                 onChangeText={setNom}
                 autoCapitalize="words"
               />
+              {estPersonne ? (
+                <>
+                  <Champ
+                    libelle="Date de naissance (facultatif)"
+                    value={naissance}
+                    onChangeText={(t) => setNaissance(formaterDateEnCours(t))}
+                    keyboardType="number-pad"
+                    placeholder="JJ/MM/AAAA"
+                    maxLength={10}
+                  />
+                  <Champ libelle="Lieu de naissance (facultatif)" value={lieuNaissance} onChangeText={setLieuNaissance} />
+                </>
+              ) : null}
               {estVisale ? (
                 <Champ libelle="Numéro du visa (facultatif)" value={visale} onChangeText={setVisale} autoCapitalize="characters" />
               ) : (

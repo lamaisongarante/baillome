@@ -15,6 +15,8 @@ export type PiecesAnnexes = {
   /** B. Diagnostics obligatoires (natures) et documents rangés au coffre, par nature. */
   diagnosticsRequis: string[];
   diagnostics: (PieceJointe & { nature: string })[];
+  /** Questions du check-up sans réponse qui décident d'un diagnostic obligatoire (libellés). */
+  aRepondre: string[];
   /** C. Notice d'information jointe (version), ou null si aucune version ne couvre la date du bail. */
   notice: { depuis: string } | null;
 };
@@ -30,6 +32,7 @@ export function piecesManquantes(p: PiecesAnnexes): string[] {
   if (p.copropriete && !p.reglement) manque.push('Extrait du règlement de copropriété');
   for (const n of p.diagnosticsRequis) if (!p.diagnostics.some((d) => d.nature === n)) manque.push(LIBELLES_DIAGNOSTICS[n] ?? n);
   if (!p.notice) manque.push('Notice d’information');
+  for (const q of p.aRepondre) manque.push(`Question du check-up sans réponse : ${q}`);
   return manque;
 }
 
@@ -50,7 +53,8 @@ export function htmlPageDeGarde(args: { numeroBien: number; adresse: string; pie
   const autres = p.diagnostics
     .filter((d) => !p.diagnosticsRequis.includes(d.nature))
     .map((d) => `<div class="sous-piece"><span class="nom-diag">${html(LIBELLES_DIAGNOSTICS[d.nature] ?? d.titre)}</span> — joint${d.date ? ` (${html(dateFr(d.date))})` : ''}</div>`);
-  const b = ligne('B', 'Dossier de diagnostic technique', [...requis, ...autres].join('') || '<div class="sous-piece">Aucun diagnostic.</div>');
+  const questions = p.aRepondre.map((q) => `<div class="sous-piece"><span class="manquant">À VÉRIFIER · question du check-up sans réponse : ${html(q)}</span></div>`);
+  const b = ligne('B', 'Dossier de diagnostic technique', [...requis, ...autres, ...questions].join('') || '<div class="sous-piece">Aucun diagnostic.</div>');
 
   const c = ligne(
     'C',

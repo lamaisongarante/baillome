@@ -204,3 +204,18 @@ test('annexes : diagnostics obligatoires selon R-04, et document manquant au cof
   });
   assert.deepEqual(blocages.map((b) => b.libelle), ['État des risques et pollutions : document à ranger dans le coffre']);
 });
+
+test('avant signature : un signataire de moins de 18 ans bloque l’envoi (la veille de ses 18 ans, oui ; le jour même, non)', async () => {
+  const { blocagesAvantSignature } = await import('../../supabase/functions/_partage/bail.ts');
+  const v = (await db.query(`select version, date_effet::text, valable_jusqu_au::text, parametres, source from regles_versions where regle_code = 'R-04'`)).rows[0];
+  const base = {
+    bien: { type_bien: 'garage', dpe_classe: null, situation_locative: 'loue_vide' }, reponses: { commune_risques: 'non' }, diagnostics: [],
+    regleR04: { code: 'R-04', titre: 'x', validee: true, version: v }, titresR04: {}, libelleQuestion: (q) => q, mentionsACompleter: [],
+  };
+  const age = (aujourdhui, naissance) =>
+    blocagesAvantSignature({ ...base, aujourdhui, signataires: [{ qui: 'Le locataire Tom Petit', date_naissance: naissance }] }).map((b) => b.libelle);
+  assert.deepEqual(age('2026-10-22', '2008-10-23'), ['Le locataire Tom Petit a moins de 18 ans à la date de signature']);
+  assert.deepEqual(age('2026-10-22', '2008-10-22'), []);
+  // Date de naissance inconnue : pas de blocage sur l'âge.
+  assert.deepEqual(age('2026-10-22', null), []);
+});

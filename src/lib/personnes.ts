@@ -18,22 +18,25 @@ export const LIBELLES_TYPE_BAIL: Record<TypeBail, string> = {
 
 /**
  * Numéro de portable saisi librement (« 06 12 34 56 78 », « +33 6 12… ») →
- * forme enregistrée (« 0612345678 », « +33612345678 »). Vide → null.
+ * forme enregistrée (« 0612345678 » ; « +44… » pour un numéro étranger). Vide → null.
  * Renvoie undefined si le numéro est invalide.
  */
 export function lireTelephone(texte: string): string | null | undefined {
   const t = texte.trim().replace(/[\s.\-()]/g, '');
   if (!t) return null;
   if (/^0\d{9}$/.test(t)) return t;
+  // Numéro français saisi au format international : même format partout (06…).
+  if (/^(\+|00)33[1-9]\d{8}$/.test(t)) return `0${t.slice(t.startsWith('+') ? 3 : 4)}`;
   if (/^\+\d{9,15}$/.test(t)) return t;
   if (/^00\d{9,15}$/.test(t)) return `+${t.slice(2)}`;
   return undefined;
 }
 
-/** « 0612345678 » → « 06 12 34 56 78 » ; les numéros internationaux restent tels quels. */
+/** « 0612345678 » ou « +33612345678 » → « 06 12 34 56 78 » ; les autres numéros internationaux restent tels quels. */
 export function afficherTelephone(tel: string | null): string {
   if (!tel) return '';
-  if (/^0\d{9}$/.test(tel)) return tel.replace(/(\d{2})(?=\d)/g, '$1 ');
+  const francais = /^\+33[1-9]\d{8}$/.test(tel) ? `0${tel.slice(3)}` : tel;
+  if (/^0\d{9}$/.test(francais)) return francais.replace(/(\d{2})(?=\d)/g, '$1 ');
   return tel;
 }
 

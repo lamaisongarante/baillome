@@ -105,7 +105,17 @@ const dossier = (autres = {}) => ({
     niveau_signature: 'avancee',
     lieu_signature: 'La Valette-du-Var',
   },
-  annexes: { diagnostics: [{ libelle: 'État des risques et pollutions', date: '2026-09-01' }] },
+  annexes: {
+    copropriete: true,
+    reglement: { titre: 'Règlement de copropriété', date: null },
+    diagnosticsRequis: ['dpe', 'erp'],
+    diagnostics: [
+      { titre: 'DPE', date: '2022-03-12', nature: 'dpe' },
+      { titre: 'État des risques', date: '2026-09-01', nature: 'erp' },
+    ],
+    aRepondre: [],
+    notice: { depuis: '2026-10-18' },
+  },
   projet: true,
   ...autres,
 });
@@ -250,7 +260,10 @@ test('mise en page A4, sans ligatures ; préambule en petit sur deux colonnes, s
   assert.ok(iPreambule > h.indexOf('class="cartouche"'));
   assert.ok(iPreambule < h.indexOf('class="partie"'));
   assert.ok(h.indexOf('Champ du contrat type') > iPreambule);
-  assert.match(h, /\.preambule \.colonnes \{ column-count: 2;/);
+  // Deux colonnes en tableau (les colonnes CSS ne sont pas respectées à l'impression par WebKit).
+  assert.ok(h.slice(iPreambule, iPreambule + 300).includes('<table class="mise-en-page'));
+  // Case « personne physique » cochée : dessinée (le fond coloré ne s'imprime pas sur iPhone).
+  assert.match(h, /<svg class="case"[^>]*><rect[^>]*fill="#0E3B2E"/);
 });
 
 test('retour de relecture n° 2 : notice séparée, notes appelées seulement, lieu de signature', async () => {
@@ -298,7 +311,7 @@ test('retour de relecture n° 1 : répartition en collectif, parties communes, �
   assert.ok(rendu.includes('collectif ; répartition de la consommation du locataire : tantièmes de copropriété(4)'));
   assert.ok(rendu.includes('collective ; répartition de la consommation du locataire : à compléter (5)'));
   assert.ok(rendu.includes('D. Le cas échéant, Enumération des locaux, parties, équipements et accessoires de l\'immeuble à usage commun : ascenseur, local vélos'));
-  assert.ok(rendu.includes('DOCUMENTS JOINTS diagnostic de performance énergétique du 12/03/2022 ; État des risques et pollutions du 01/09/2026'));
+  assert.ok(rendu.includes('DOCUMENTS JOINTS Diagnostic de performance énergétique du 12/03/2022 ; État des risques et pollutions du 01/09/2026'));
   assert.ok(rendu.includes('à La Valette-du-Var'));
   // La mention manquante est signalée : pas d'envoi à la signature.
   assert.deepEqual(mentionsACompleter(d), ['modalité de production d\'eau chaude sanitaire']);
@@ -316,6 +329,7 @@ test('annexes : page de garde dans l’ordre officiel, pièces manquantes claire
   const pieces = {
     copropriete: true,
     reglement: null,
+    aRepondre: [],
     diagnosticsRequis: ['dpe', 'electricite', 'erp'],
     diagnostics: [
       { titre: 'DPE', date: '2022-03-12', nature: 'dpe' },
@@ -335,4 +349,20 @@ test('annexes : page de garde dans l’ordre officiel, pièces manquantes claire
   // Tout est joint : pas d'avertissement.
   const complet = { ...pieces, reglement: { titre: 'Règlement', date: null }, diagnostics: [...pieces.diagnostics, { titre: 'ERP', date: '2026-09-01', nature: 'erp' }] };
   assert.ok(!texteRendu(htmlPageDeGarde({ numeroBien: 1, adresse: 'x', pieces: complet, projet: true })).includes('PIÈCES MANQUANTES'));
+});
+
+test('une seule source : le bail et la page de garde lisent la même liste (coffre), manquants et questions compris', async () => {
+  const { htmlPageDeGarde } = await import('../../src/lib/pdf/annexes.ts');
+  const d = dossier({ fichierNotice: null });
+  d.annexes = { ...d.annexes, diagnosticsRequis: ['dpe', 'electricite'], diagnostics: [{ titre: 'DPE', date: '2022-03-12', nature: 'dpe' }], aRepondre: ['Votre commune est-elle exposée ?'] };
+  const bail = texteRendu(htmlBail(d));
+  const garde = texteRendu(htmlPageDeGarde({ numeroBien: 1, adresse: 'x', pieces: d.annexes, projet: true }));
+  assert.ok(bail.includes('DOCUMENTS JOINTS Diagnostic de performance énergétique du 12/03/2022'));
+  assert.ok(bail.includes('MANQUANTS État de l’installation intérieure d’électricité'));
+  assert.ok(bail.includes('À VÉRIFIER Votre commune est-elle exposée ?'));
+  assert.ok(garde.includes('Diagnostic de performance énergétique — joint (12/03/2022)'));
+  assert.ok(garde.includes('État de l’installation intérieure d’électricité — MANQUANT'));
+  assert.ok(garde.includes('question du check-up sans réponse : Votre commune est-elle exposée ?'));
+  // L'amiante, absent du coffre, n'apparaît nulle part.
+  assert.ok(!bail.includes('amiante des parties privatives') && !garde.includes('amiante'));
 });

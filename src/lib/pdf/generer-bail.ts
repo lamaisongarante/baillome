@@ -11,7 +11,6 @@ import * as Sharing from 'expo-sharing';
 import { PDFDocument } from 'pdf-lib';
 import { Platform } from 'react-native';
 
-import { TYPES_DIAGNOSTIC } from '@/components/fiche/rubriques';
 import { chargerDossierBail } from '@/lib/baux';
 import { lienTemporaire } from '@/lib/coffre';
 import { phraseEquipements } from '@/lib/equipements';
@@ -21,7 +20,9 @@ import { supabase } from '@/lib/supabase';
 import { htmlPageDeGarde, type PiecesAnnexes } from './annexes';
 import { htmlBail, htmlNoticeBail, mentionsACompleter, type DonneesBail } from './bail';
 
-export async function chargerDonneesBail(bailId: string): Promise<{ donnees: DonneesBail } | { impossible: string }> {
+export async function chargerDonneesBail(
+  bailId: string,
+): Promise<{ donnees: DonneesBail; fichiers: DocumentAnnexe[]; bienId: string } | { impossible: string }> {
   const dossier = await chargerDossierBail(bailId);
   if (!dossier) return { impossible: 'Ce bail est introuvable.' };
   const { bail } = dossier;
@@ -38,7 +39,7 @@ export async function chargerDonneesBail(bailId: string): Promise<{ donnees: Don
   }
   const notice = versionApplicable(NOTICES, bail.date_effet);
 
-  const [bien, locaux, profil, locataires, diagnostics] = await Promise.all([
+  const [bien, locaux, profil, locataires] = await Promise.all([
     supabase
       .from('biens')
       .select(
@@ -53,7 +54,6 @@ export async function chargerDonneesBail(bailId: string): Promise<{ donnees: Don
       .select('ordre, personnes (prenom, nom, telephone, email, date_naissance, lieu_naissance, adresse)')
       .eq('bail_id', bailId)
       .order('ordre'),
-    supabase.from('diagnostics').select('type, date_realisation').eq('bien_id', bail.bien_id).order('date_realisation', { ascending: false }),
   ]);
   if (!bien.data || !profil.data) return { impossible: 'Les informations du bien n’ont pas pu être chargées. Vérifiez votre connexion.' };
   const b = bien.data;
@@ -112,17 +112,14 @@ export async function chargerDonneesBail(bailId: string): Promise<{ donnees: Don
       locaux_accessoires: locaux.data ?? [],
     },
     bail,
-    annexes: {
-      // Le diagnostic le plus récent de chaque type.
-      diagnostics: TYPES_DIAGNOSTIC.flatMap((t) => {
-        const d = (diagnostics.data ?? []).find((x) => x.type === t.valeur);
-        return d ? [{ libelle: t.libelle, date: d.date_realisation }] : [];
-      }),
-    },
+    // Rempli juste après : la liste des pièces vient du coffre (une seule source pour le bail et les annexes).
+    annexes: { copropriete: false, reglement: null, diagnosticsRequis: [], diagnostics: [], aRepondre: [], notice: null },
     // Contrat type et clauses de Baillome en cours de relecture : document marqué « projet ».
     projet: true,
   };
-  return { donnees };
+  const { fichiers, ...pieces } = await chargerPieces(bail.bien_id, donnees);
+  donnees.annexes = pieces;
+  return { donnees, fichiers, bienId: bail.bien_id };
 }
 
 /**
@@ -131,9 +128,14 @@ export async function chargerDonneesBail(bailId: string): Promise<{ donnees: Don
  * périmés (R-04, avec les réponses du check-up). L'étape de signature reprendra
  * cette liste.
  */
-export async function chargerBlocagesSignature(bienId: string, donnees: DonneesBail, naturesAuCoffre: string[]): Promise<BlocageSignature[]> {
+export async function chargerBlocagesSignature(
+  bailId: string,
+  bienId: string,
+  donnees: DonneesBail,
+  naturesAuCoffre: string[],
+): Promise<BlocageSignature[]> {
   const aujourdhui = new Date().toISOString().slice(0, 10);
-  const [bien, reponses, diagnostics, regle, version, situations] = await Promise.all([
+  const [bien, reponses, diagnostics, regle, version, situations, cautions] = await Promise.all([
     supabase.from('biens').select('*').eq('id', bienId).single(),
     supabase.from('reponses_checkup').select('question, valeur').eq('bien_id', bienId),
     supabase.from('diagnostics').select('type, date_realisation, resultat').eq('bien_id', bienId),
@@ -146,6 +148,10 @@ export async function chargerBlocagesSignature(bienId: string, donnees: DonneesB
       .order('date_effet', { ascending: false })
       .limit(1),
     supabase.from('regles_situations').select('code, titre').eq('regle_code', 'R-04'),
+    supabase
+      .from('cautionnements')
+      .select('personnes!cautionnements_garant_id_proprietaire_id_fkey (prenom, nom, type_garant, date_naissance)')
+      .eq('bail_id', bailId),
   ]);
   if (!bien.data || !regle.data || !version.data?.[0]) {
     return [{ code: 'chargement', source: 'Bail', libelle: 'Les diagnostics n’ont pas pu être vérifiés : vérifiez votre connexion.' }];
@@ -160,6 +166,14 @@ export async function chargerBlocagesSignature(bienId: string, donnees: DonneesB
     libelleQuestion: (code) => question(code)?.libelle ?? code,
     mentionsACompleter: mentionsACompleter(donnees),
     naturesAuCoffre,
+    signataires: [
+      ...(donnees.bailleur.qualite === 'personne_physique' ? [{ qui: `Le bailleur (${donnees.bailleur.nom})`, date_naissance: donnees.bailleur.date_naissance }] : []),
+      ...donnees.locataires.map((l) => ({ qui: `Le locataire ${[l.prenom, l.nom].filter(Boolean).join(' ')}`, date_naissance: l.date_naissance })),
+      ...(cautions.data ?? [])
+        .map((c) => c.personnes as unknown as { prenom: string | null; nom: string; type_garant: string; date_naissance: string | null })
+        .filter((g) => g.type_garant === 'personne_physique')
+        .map((g) => ({ qui: `La caution ${[g.prenom, g.nom].filter(Boolean).join(' ')}`, date_naissance: g.date_naissance })),
+    ],
   });
 }
 
@@ -167,10 +181,7 @@ export async function chargerBlocagesSignature(bienId: string, donnees: DonneesB
 export async function chargerEtatSignature(bailId: string): Promise<{ blocages: BlocageSignature[] } | { impossible: string }> {
   const r = await chargerDonneesBail(bailId);
   if ('impossible' in r) return r;
-  const bienId = (await supabase.from('baux').select('bien_id').eq('id', bailId).single()).data?.bien_id;
-  if (!bienId) return { impossible: 'Ce bail est introuvable.' };
-  const pieces = await chargerPieces(bienId, r.donnees);
-  return { blocages: await chargerBlocagesSignature(bienId, r.donnees, pieces.diagnostics.map((d) => d.nature)) };
+  return { blocages: await chargerBlocagesSignature(bailId, r.bienId, r.donnees, r.donnees.annexes.diagnostics.map((d) => d.nature)) };
 }
 
 type DocumentAnnexe = { titre: string; date: string | null; nature: string | null; chemin: string; type: string | null };
@@ -193,9 +204,9 @@ async function chargerPieces(bienId: string, d: DonneesBail): Promise<PiecesAnne
   const reglement = liste.find((x) => x.type_document === 'reglement_copropriete') ?? null;
   const parNature = new Map<string, (typeof liste)[number]>();
   for (const x of liste) if (x.type_document === 'diagnostic' && x.nature_diagnostic && !parNature.has(x.nature_diagnostic)) parNature.set(x.nature_diagnostic, x);
-  const { requis } = bien.data
+  const { requis, aRepondre } = bien.data
     ? diagnosticsRequis({ bien: bien.data as BienCheckup, reponses: Object.fromEntries((reponses.data ?? []).map((q) => [q.question, q.valeur])) })
-    : { requis: [] as string[] };
+    : { requis: [] as string[], aRepondre: [] as string[] };
   // Ordre officiel : A (règlement), puis B dans l'ordre des diagnostics requis, puis les autres diagnostics.
   const ordre = [...requis, ...[...parNature.keys()].filter((n) => !requis.includes(n))];
   const diagnostics = ordre.flatMap((n) => {
@@ -207,6 +218,7 @@ async function chargerPieces(bienId: string, d: DonneesBail): Promise<PiecesAnne
     reglement: reglement ? { titre: reglement.titre, date: reglement.date_document } : null,
     diagnosticsRequis: requis,
     diagnostics,
+    aRepondre: aRepondre.map((q) => question(q)?.libelle ?? q),
     notice: d.fichierNotice ? { depuis: NOTICES.find((n) => n.fichier === d.fichierNotice)?.depuis ?? '' } : null,
     fichiers: [
       ...(reglement ? [{ titre: reglement.titre, date: reglement.date_document, nature: null, chemin: reglement.fichier_chemin!, type: reglement.fichier_type }] : []),
@@ -215,10 +227,11 @@ async function chargerPieces(bienId: string, d: DonneesBail): Promise<PiecesAnne
   };
 }
 
-// A4 (595 × 842 points) ; sur iPhone, les marges de 19 mm sont données à l'impression.
+// A4 (595 × 842 points) ; sur iPhone, les marges de 19 mm sont données à l'impression, et
+// l'échelle ramenée à 0,75 : l'iPhone compte 1 point par pixel CSS, contre 0,75 ailleurs.
 const imprimer = (h: string) =>
   Print.printToFileAsync({
-    html: h,
+    html: Platform.OS === 'ios' ? h.replace('zoom: 1;', 'zoom: 0.75;') : h,
     width: 595,
     height: 842,
     ...(Platform.OS === 'ios' ? { margins: { left: 54, right: 54, top: 54, bottom: 54 } } : {}),
@@ -252,10 +265,8 @@ export async function genererBail(bailId: string): Promise<string | null> {
 export async function genererAnnexes(bailId: string): Promise<string | null> {
   const r = await chargerDonneesBail(bailId);
   if ('impossible' in r) return r.impossible;
-  const bienId = (await supabase.from('baux').select('bien_id').eq('id', bailId).single()).data?.bien_id;
-  if (!bienId) return 'Ce bail est introuvable.';
-  const pieces = await chargerPieces(bienId, r.donnees);
   const d = r.donnees;
+  const pieces = d.annexes;
   const adresse = [d.bien.adresse, [d.bien.code_postal, d.bien.commune].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   const garde = htmlPageDeGarde({ numeroBien: d.bien.numero, adresse, pieces, projet: d.projet });
   const notice = htmlNoticeBail(d);
@@ -282,7 +293,7 @@ export async function genererAnnexes(bailId: string): Promise<string | null> {
 
   await ajouterPdf(await new File((await imprimer(garde)).uri).arrayBuffer());
   const nonJoints: string[] = [];
-  for (const f of pieces.fichiers) {
+  for (const f of r.fichiers) {
     try {
       const lien = await lienTemporaire(f.chemin);
       if (!lien) throw new Error('lien');

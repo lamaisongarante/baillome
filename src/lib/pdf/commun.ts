@@ -52,7 +52,14 @@ export function page({
   piedGauche,
   piedDroite,
   corps,
+  echelle = 1,
 }: {
+  /**
+   * Échelle d'impression. L'iPhone compte 1 point par pixel CSS (Chrome et
+   * Android : 0,75 point) : sans correction, tout y sort un tiers plus grand.
+   * generer-bail.ts passe 0,75 sur iPhone.
+   */
+  echelle?: number;
   titre: string;
   reference: string;
   piedGauche: string;
@@ -60,12 +67,21 @@ export function page({
   corps: string;
 }): string {
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${html(titre)}</title>
 <link rel="stylesheet" href="${POLICES}">
 <style>
 @page { size: A4; margin: 19mm; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: ${FOND}; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; zoom: ${echelle}; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+table.mise-en-page { width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; font-size: inherit; }
+table.mise-en-page > tbody > tr > td { border: none; padding: 0; vertical-align: top; }
+table.mise-en-page > tbody > tr > td.col-gauche { width: 50%; padding-right: 6pt; }
+table.mise-en-page > tbody > tr > td.col-droite { width: 50%; padding-left: 6pt; }
+table.parties-table { margin-top: 6pt; }
+table.grille > tbody > tr > td { width: 50%; padding-right: 8pt; }
+svg.case { display: inline-block; vertical-align: -0.5pt; margin: 0 3pt 0 4pt; }
 /* Texte juridique : copiable et recherchable sans erreur (pas de ligatures, pas d'espacement des lettres). */
 body { font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 9.75pt; line-height: 1.4; color: ${TEXTE};
   font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0, "dlig" 0; letter-spacing: 0; }
@@ -85,20 +101,15 @@ body { font-family: 'Instrument Sans', Helvetica, Arial, sans-serif; font-size: 
 .rubrique { margin: 8pt 0 2pt 0; font-weight: 700; color: ${PIN}; break-after: avoid; page-break-after: avoid; }
 p { margin: 3.5pt 0; }
 p.tiret { padding-left: 9pt; text-indent: -9pt; }
-.grille { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16pt; }
 .grille p { margin: 2pt 0; }
-.grille p.large { grid-column: 1 / -1; }
 .champ { border-bottom: 1pt dotted ${PIN}; padding: 0 1.5pt; font-weight: 600; color: ${PIN}; }
 .insecable, .option { white-space: nowrap; }
 .encadre { border: 0.75pt solid ${TRAIT}; border-radius: 8pt; padding: 8pt 10pt; margin: 6pt 0; }
 .encadre-fort { border: 1.1pt solid ${PIN}; border-radius: 9pt; padding: 9pt 11pt; margin: 8pt 0; break-inside: avoid; page-break-inside: avoid; }
 .etiquette { font-size: 7pt; color: ${SECONDAIRE}; margin-bottom: 3pt; }
-.deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; margin-top: 6pt; }
 .partie-encadre { margin: 0; padding: 7pt 9pt; font-size: 8.75pt; line-height: 1.32; break-inside: avoid; page-break-inside: avoid; }
 .ligne { padding: 1pt 0; }
 .libelle { color: ${SECONDAIRE}; }
-.case { display: inline-block; width: 7pt; height: 7pt; border: 0.9pt solid ${PIN}; border-radius: 1.5pt; vertical-align: -0.5pt; margin: 0 3pt 0 4pt; }
-.case.cochee { background: ${PIN}; }
 .personne + .personne { margin-top: 5pt; padding-top: 5pt; border-top: 0.75pt dashed ${TRAIT}; }
 .complements { margin-top: 4pt; padding-top: 3pt; border-top: 0.75pt dashed ${TRAIT}; }
 .designe { margin-top: 4pt; font-size: 8.5pt; color: ${SECONDAIRE}; }
@@ -112,8 +123,6 @@ p.tiret { padding-left: 9pt; text-indent: -9pt; }
 .joints .etiquette { display: inline; margin-right: 4pt; }
 .preambule { margin: 4pt 0 4pt 0; padding: 7pt 10pt; border: 0.75pt solid ${TRAIT}; border-radius: 8pt; font-size: 8pt; line-height: 1.35; color: ${SECONDAIRE}; }
 .preambule p { margin: 2pt 0; }
-.preambule .colonnes { column-count: 2; column-gap: 14pt; }
-.preambule .colonnes p { break-inside: avoid; page-break-inside: avoid; }
 .notes { margin-top: 12pt; padding-top: 6pt; border-top: 0.75pt solid ${FILET}; font-size: 7.5pt; line-height: 1.35; color: ${SECONDAIRE}; }
 .notes p { margin: 1.5pt 0; }
 .signatures { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; margin-top: 8pt; break-inside: avoid; page-break-inside: avoid; }

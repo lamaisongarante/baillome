@@ -10,6 +10,9 @@
 // Fonctions pures, testées dans tests/logique/pdf-bail.test.mjs.
 import { TEXTES_OFFICIELS } from '../../contenus/textes-officiels.ts';
 import { couleursDpe } from '../../theme/tokens.ts';
+import { afficherTelephone } from '../personnes.ts';
+import { LIBELLES_DIAGNOSTICS } from '../../../supabase/functions/_partage/bail.ts';
+import type { PiecesAnnexes } from './annexes.ts';
 import { PIN, champ, dateFr, euros, html, page } from './commun.ts';
 import { htmlNotice } from './notice.ts';
 
@@ -116,7 +119,8 @@ export type DonneesBail = {
     lieu_signature: string | null;
   };
   /** Documents réellement joints, tirés de la fiche du bien et du coffre (XI). */
-  annexes: { diagnostics: { libelle: string; date: string | null }[] };
+  /** Pièces du coffre, lues par la même fonction que les annexes (une seule source). */
+  annexes: PiecesAnnexes;
   /** Bail non encore validé par Sarah et l'avocat : mention « projet » sur chaque page. */
   projet: boolean;
 };
@@ -154,7 +158,7 @@ const LOCAUX: Record<string, string> = { cave: 'cave', parking: 'parking', garag
 const TRIMESTRES = ['', '1er trimestre', '2e trimestre', '3e trimestre', '4e trimestre'];
 
 const nomComplet = (p: { prenom: string | null; nom: string }) => [p.prenom, p.nom].filter(Boolean).join(' ');
-const telephone = (t: string) => (/^0\d{9}$/.test(t) ? t.replace(/(\d{2})(?=\d)/g, '$1 ') : t);
+const telephone = (t: string) => afficherTelephone(t);
 
 function duree(mois: number): string {
   if (mois % 12 === 0) return `${mois / 12} an${mois > 12 ? 's' : ''}`;
@@ -624,6 +628,14 @@ export function mentionsACompleter(d: DonneesBail): string[] {
 
 const QUALITES = { personne_physique: 'personne physique', personne_morale: 'personne morale' } as const;
 
+/** Case à cocher dessinée (une image s'imprime partout, contrairement à un fond coloré). */
+const caseACocher = (cochee: boolean) =>
+  `<svg class="case" width="8" height="8" viewBox="0 0 8 8"><rect x="0.5" y="0.5" width="7" height="7" rx="1.5" fill="${cochee ? PIN : 'none'}" stroke="${PIN}" stroke-width="1"/></svg>`;
+
+/** Deux colonnes en tableau : la seule mise en colonnes que tous les moteurs d'impression respectent. */
+const deuxColonnes = (gauche: string, droite: string, classe = '') =>
+  `<table class="mise-en-page ${classe}"><tbody><tr><td class="col-gauche">${gauche}</td><td class="col-droite">${droite}</td></tr></tbody></table>`;
+
 const ligne = (libelle: string, valeur: string) => `<div class="ligne"><span class="libelle">${html(libelle)} :</span> ${champ(valeur)}</div>`;
 const naissance = (date: string | null, lieu: string | null) =>
   date || lieu ? [date ? `le ${dateFr(date)}` : null, lieu ? `à ${lieu}` : null].filter(Boolean).join(' ') : null;
@@ -637,7 +649,7 @@ function parties(d: DonneesBail, ligneBailleur: string, ligneLocataire: string):
   const suiteLocataire = ligneLocataire.slice(ligneLocataire.lastIndexOf(']') + 1).trim();
   const majuscule = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
   const caseQualite = (q: keyof typeof QUALITES) =>
-    `<span class="option"><span class="case${b.qualite === q ? ' cochee' : ''}"></span>${QUALITES[q]}${q === 'personne_morale' ? ' (1)' : ''}</span>`;
+    `<span class="option">${caseACocher(b.qualite === q)}${QUALITES[q]}${q === 'personne_morale' ? ' (1)' : ''}</span>`;
 
   const complementsBailleur = [
     naissance(b.date_naissance, b.lieu_naissance) && b.qualite === 'personne_physique'
@@ -675,7 +687,29 @@ ${complements.length ? `<div class="complements"><div class="mono etiquette">COM
     .join('');
   const locataire = `<div class="encadre partie-encadre"><div class="mono etiquette">${d.locataires.length > 1 ? 'LES LOCATAIRES' : 'LE LOCATAIRE'}</div>
 ${locataires}<div class="designe">${html(suiteLocataire)}</div></div>`;
-  return `<div class="deux-colonnes">${bailleur}${locataire}</div>`;
+  return deuxColonnes(bailleur, locataire, 'parties-table');
+}
+
+/** Caractéristiques du logement : deux par ligne, les plus longues sur toute la largeur. */
+function grilleEnTableau(elements: string[]): string {
+  const lignes: string[] = [];
+  let attente: string | null = null;
+  const vider = () => {
+    if (attente !== null) lignes.push(`<tr><td>${attente}</td><td></td></tr>`);
+    attente = null;
+  };
+  for (const e of elements) {
+    if (e.startsWith('large:')) {
+      vider();
+      lignes.push(`<tr><td colspan="2">${e.slice(6)}</td></tr>`);
+    } else if (attente === null) attente = e;
+    else {
+      lignes.push(`<tr><td>${attente}</td><td>${e}</td></tr>`);
+      attente = null;
+    }
+  }
+  vider();
+  return `<table class="mise-en-page grille"><tbody>${lignes.join('')}</tbody></table>`;
 }
 
 /** Étiquette de la classe DPE, entourée de sa couleur officielle (trait, sans aplat). */
@@ -705,9 +739,17 @@ export function htmlBail(d: DonneesBail): string {
   const preambule = visibles.slice(0, debutParties);
   const contenu = visibles.slice(debutParties);
   if (preambule.length) {
-    corps.push(`<div class="preambule"><div class="mono etiquette">PRÉAMBULE DU CONTRAT TYPE (TEXTE OFFICIEL)</div><div class="colonnes">${preambule
-      .map((p) => `<p${p.source.startsWith('-') ? ' class="tiret"' : ''}>${p.html}</p>`)
-      .join('')}</div></div>`);
+    // Deux colonnes équilibrées : on coupe à la moitié du texte, entre deux paragraphes.
+    const paragraphes = preambule.map((p) => `<p${p.source.startsWith('-') ? ' class="tiret"' : ''}>${p.html}</p>`);
+    const total = preambule.reduce((n, p) => n + p.source.length, 0);
+    let cumul = 0;
+    const coupure = preambule.findIndex((p) => (cumul += p.source.length) >= total / 2) + 1;
+    corps.push(
+      `<div class="preambule"><div class="mono etiquette">PRÉAMBULE DU CONTRAT TYPE (TEXTE OFFICIEL)</div>${deuxColonnes(
+        paragraphes.slice(0, coupure).join(''),
+        paragraphes.slice(coupure).join(''),
+      )}</div>`,
+    );
   }
 
   let encadreDpe: string[] | null = null;
@@ -717,12 +759,12 @@ export function htmlBail(d: DonneesBail): string {
     const s = l.source;
     if (s.startsWith('- localisation du logement')) grille = [];
     if (grille && s.startsWith('- rappel : un logement décent')) {
-      corps.push(`<div class="grille">${grille.join('')}</div>`);
+      corps.push(grilleEnTableau(grille));
       grille = null;
     }
     if (grille) {
       const texte = l.html.replace(/<[^>]+>/g, '');
-      grille.push(`<p class="tiret${texte.length > 60 ? ' large' : ''}">${l.html}</p>`);
+      grille.push(texte.length > 60 ? `large:<p class="tiret">${l.html}</p>` : `<p class="tiret">${l.html}</p>`);
       continue;
     }
     // Partie I : les deux encadrés remplacent les deux lignes de désignation.
@@ -769,12 +811,13 @@ export function htmlBail(d: DonneesBail): string {
     }
     // XI. B : documents réellement joints au dossier de diagnostic technique.
     if (s.startsWith('- le cas échéant, un état des risques naturels et technologiques')) {
-      const docs = [
-        d.bien.dpe_classe ? `diagnostic de performance énergétique${d.bien.dpe_date ? ` du ${dateFr(d.bien.dpe_date)}` : ''}` : null,
-        ...d.annexes.diagnostics.map((x) => `${x.libelle}${x.date ? ` du ${dateFr(x.date)}` : ''}`),
-      ].filter((x): x is string => !!x);
+      const p = d.annexes;
+      const joints = p.diagnostics.map((x) => `${LIBELLES_DIAGNOSTICS[x.nature] ?? x.titre}${x.date ? ` du ${dateFr(x.date)}` : ''}`);
+      const manquants = p.diagnosticsRequis.filter((n) => !p.diagnostics.some((x) => x.nature === n)).map((n) => LIBELLES_DIAGNOSTICS[n] ?? n);
       corps.push(
-        `<div class="joints"><span class="mono etiquette">DOCUMENTS JOINTS</span> ${docs.length ? docs.map((x) => html(x)).join(' ; ') : 'aucun document enregistré dans le coffre'}</div>`,
+        `<div class="joints"><span class="mono etiquette">DOCUMENTS JOINTS</span> ${joints.length ? joints.map((x) => html(x)).join(' ; ') : 'aucun diagnostic rangé dans le coffre'}${
+          manquants.length ? `<br><span class="mono etiquette">MANQUANTS</span> ${manquants.map((x) => html(x)).join(' ; ')}` : ''
+        }${p.aRepondre.length ? `<br><span class="mono etiquette">À VÉRIFIER</span> ${p.aRepondre.map((x) => html(x)).join(' ; ')}` : ''}</div>`,
       );
     }
     if (s.startsWith('C. Une notice d’information') || s.startsWith("C. Une notice d'information")) {

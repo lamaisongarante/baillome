@@ -6,8 +6,10 @@ import { afficherTelephone, estColocation, lireEmail, lireTelephone, typeBailPro
 test('téléphone : formes acceptées et refusées', () => {
   assert.equal(lireTelephone('06 12 34 56 78'), '0612345678');
   assert.equal(lireTelephone('06.12.34.56.78'), '0612345678');
-  assert.equal(lireTelephone('+33 6 12 34 56 78'), '+33612345678');
-  assert.equal(lireTelephone('0033 6 12 34 56 78'), '+33612345678');
+  // Numéro français au format international : ramené au format 06… (même format partout).
+  assert.equal(lireTelephone('+33 6 12 34 56 78'), '0612345678');
+  assert.equal(lireTelephone('0033 6 12 34 56 78'), '0612345678');
+  assert.equal(lireTelephone('+44 7911 123456'), '+447911123456');
   assert.equal(lireTelephone(''), null);
   assert.equal(lireTelephone('06 12'), undefined);
   assert.equal(lireTelephone('abc'), undefined);
@@ -15,7 +17,8 @@ test('téléphone : formes acceptées et refusées', () => {
 
 test('téléphone : affichage par paires', () => {
   assert.equal(afficherTelephone('0612345678'), '06 12 34 56 78');
-  assert.equal(afficherTelephone('+33612345678'), '+33612345678');
+  assert.equal(afficherTelephone('+33689649365'), '06 89 64 93 65');
+  assert.equal(afficherTelephone('+447911123456'), '+447911123456');
   assert.equal(afficherTelephone(null), '');
 });
 
