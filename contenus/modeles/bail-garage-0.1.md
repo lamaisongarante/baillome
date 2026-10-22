@@ -1,4 +1,4 @@
-**PROJET — rédaction propre à Baillome, à valider par l'avocat.** Aucune clause de ce bail n'est imposée par un texte : il n'existe pas de contrat type pour la location d'un garage seul. Chaque clause indique l'article qui la fonde. Les articles du code civil cités ont été relus sur Légifrance le 22 octobre 2026 (titre VIII, articles 1708 à 1762) ; les articles 1174, 1375 et 1377 proviennent de docs/sources-juridiques.
+**PROJET — rédaction propre à Baillome, à valider par l'avocat.** Aucune clause de ce bail n'est imposée par un texte : il n'existe pas de contrat type pour la location d'un garage seul. Chaque clause indique l'article qui la fonde. Les articles du code civil cités ont été relus sur Légifrance le 22 octobre 2026 (titre VIII, articles 1708 à 1762) ; les articles 1174, 1375 et 1377 proviennent de docs/sources-juridiques ; les articles 1224 et 1225 ont été relus sur Légifrance le 22 octobre 2026 (docs/sources-juridiques/code-civil-art-1224-1225-resolution.md).
 
 Conventions : {{champ}} = rempli par Baillome ; ▸ SI … = bloc affiché seulement si la condition est remplie ; « Fondement » = ligne d'explication, non imprimée dans le bail.
 
@@ -122,11 +122,11 @@ Un état des lieux, accompagné de photographies, est établi contradictoirement
 
 ## 13. Clause résolutoire
 
-À défaut de paiement d'un terme de loyer ou de charges à son échéance, ou de versement du dépôt de garantie, le bail est résilié de plein droit un mois après une mise en demeure de payer restée sans effet, adressée au preneur par lettre recommandée avec demande d'avis de réception et rappelant la présente clause.
+À défaut de paiement d'un terme de loyer ou de charges à son échéance, ou de versement du dépôt de garantie, le bail est résilié de plein droit un mois après une mise en demeure de payer restée sans effet, adressée au preneur par lettre recommandée avec demande d'avis de réception et mentionnant expressément la présente clause résolutoire.
 
 En cas de résiliation par la faute du preneur, celui-ci reste tenu de payer le loyer pendant le temps nécessaire à la relocation, sans préjudice de dommages et intérêts.
 
-> Fondement : article 1741 (le louage se résout par le défaut du bailleur ou du preneur de remplir leurs engagements) ; article 1760 (loyer dû pendant le temps nécessaire à la relocation). Délai d'un mois : décision de Sarah du 20 octobre 2026. Le régime général de la clause résolutoire (article 1225 du code civil) n'est pas dans docs/sources : texte à fournir pour vérifier la mise en demeure.
+> Fondement : article 1741 (le louage se résout par le défaut du bailleur ou du preneur de remplir leurs engagements) ; article 1760 (loyer dû pendant le temps nécessaire à la relocation). Article 1224 (la résolution résulte de l'application d'une clause résolutoire) ; article 1225 (la clause précise les engagements dont l'inexécution entraîne la résolution ; mise en demeure infructueuse, qui « ne produit effet que si elle mentionne expressément la clause résolutoire »). Délai d'un mois : décision de Sarah du 20 octobre 2026.
 
 ## 14. Restitution de l'emplacement
 
@@ -170,7 +170,7 @@ Le bailleur — Le preneur ▸ SI garant : — La caution
 
 1. L'ensemble de la rédaction.
 2. Article 1740 : la caution ne s'étend pas à la prolongation née de l'article 1738. La reconduction tacite prévue au contrat (article 4) est-elle une « prolongation » au sens de ce texte ? L'acte de cautionnement doit-il viser expressément les reconductions ?
-3. Clause résolutoire (article 13) : conformité de la mise en demeure à l'article 1225 du code civil (texte à ajouter aux sources).
+3. Clause résolutoire (article 13) : rédaction de la clause et de la mise en demeure au regard des articles 1224 et 1225 du code civil.
 4. Révision à la hausse comme à la baisse (article 6) : choix de rédaction à confirmer.
 5. Clause de vente (article 16) : montant de l'indemnité, et intérêt de l'option alors que le bail électronique n'a pas date certaine (article 1377).
 6. Garage loué par contrat séparé au locataire du logement du même bailleur (rappel de docs/modele-garage.md).
